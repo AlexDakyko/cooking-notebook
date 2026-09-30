@@ -1,0 +1,12 @@
+---
+description: All durable app data must live in SQLite, not ad-hoc files
+alwaysApply: true
+---
+
+# Data in the database
+
+- **System of record:** local SQLite (`cooking-notebook.db` or the path in `docs/design.md`).
+- Persist recipes, ingredients, steps, notes, tags, **photo bytes (BLOB)**, timestamps, and settings (including skin).
+- User `.txt` / photo files are **import and export only**. Do not keep a parallel JSON or folder tree of recipes.
+- Enable `PRAGMA foreign_keys = ON`. Deletes must cascade as in the design schema.
+- Tests that check persistence must use SQLite (temp file or equivalent), not mocked “saved” memory pretending to be the database unless the test is purely UI.

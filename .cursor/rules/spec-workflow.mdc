@@ -1,0 +1,20 @@
+---
+description: Spec workflow — SSD, design, tasks, tests, fix, commit
+alwaysApply: true
+---
+
+# Spec workflow
+
+Follow this order. Do not skip ahead to code when docs are missing or stale.
+
+1. **Read** `docs/SSD.md` (Software Specification Document). If the request changes behavior, **update the SSD first**.
+2. **Read** `docs/design.md`. If implementation shape changes, **update design** to match the SSD.
+3. **Read** `docs/tasks.md`. Add or adjust tasks before coding. Implement the **next unchecked** task only (small slices).
+4. **Implement** that task as in `docs/design.md` (SQLite is the system of record).
+5. **Add or update tests** for the slice (JUnit; map to FR- ids from the SSD when practical).
+6. **Run tests**. If they fail, **find the error**, **fix**, run again. Do not mark the task done while tests fail.
+7. **Commit** only when the user asks, or when they explicitly want this workflow’s commit step for the finished slice. Use a short message that says **why**. No secrets. No `git commit --amend` unless the user asked and amend rules allow it.
+
+If SSD, design, and code disagree: stop, fix **SSD → design → tasks → code**.
+
+Do not treat `docs/requirements.md` as the spec. Use the SSD.
