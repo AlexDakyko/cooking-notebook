@@ -1,130 +1,147 @@
-# Software Specification Document (SSD)
+# Design
 
 **Project:** Cooking Notebook  
-**Version:** 0.3  
+**Version:** 0.1  
 **Date:** 2026-09-30  
-**Status:** Source of truth for **what** the product must do. Code starts when tasks in `docs/tasks.md` are implemented.
+**Status:** Draft from `docs/SSD.md` v0.3 — read the SSD before changing this file.
 
-Do not implement features that are not in this SSD (or a later version of it).
-
-Related files: [`design.md`](design.md) (how), [`tasks.md`](tasks.md) (work order).
+This file is **how** we will build the app. If design and the SSD disagree, **fix the SSD first**, then this file, then tasks.
 
 ---
 
-## 1. Product
+## 1. Approach
 
-Cooking Notebook is a **personal recipe notebook**: a **Java desktop** app on this computer.
+- **Desktop client:** Java 21 + JavaFX + Maven.
+- **System of record:** one **SQLite** file. Recipes, tags, settings, and **photo bytes** live in tables (photos as `BLOB`).
+- **Files on disk** are only for **import/export** (user-chosen `.txt` / images) and for the SQLite file itself.
+- **Layers:** UI (JavaFX) → services → repositories (JDBC). No business rules only in controllers.
 
-The user can write recipes, copy-paste text, upload and download **txt** and **photos**, change **skins**, and add features later **without losing data**.
-
-**One user on this PC.** No login in version 1. No internet required.
-
-**Persistence:** all app data is stored in a **local database** (see FR-DATA). Import/export files are only a way to move data in and out; they are not the system of record.
-
----
-
-## 2. Users
-
-| User | Need |
-|------|------|
-| Home cook | Keep recipes, notes, and photos in one place |
-| Beginner developer | Small project that grows in clear steps |
+```text
+JavaFX UI  →  RecipeService / SettingsService  →  JDBC repositories  →  SQLite file
+```
 
 ---
 
-## 3. Functional requirements
+## 2. SQLite file
 
-IDs are stable. Tasks and tests should refer to them (e.g. `FR-1`).
-
-### Data and notebook
-
-| ID | Requirement |
-|----|----------------|
-| **FR-DATA** | Persist **all** durable data in a **local database**: recipes, ingredients, steps, notes, tags, photos (image bytes), timestamps, and user settings (including selected skin). No JSON/file tree as the primary store. |
-| **FR-1** | Create a new recipe (default title such as “Untitled recipe”). |
-| **FR-2** | Open a recipe from a list of saved recipes. |
-| **FR-3** | Edit title, ingredients, steps, notes, and tags. |
-| **FR-4** | Save changes so they survive closing the app (database commit). |
-| **FR-5** | Delete a recipe only after confirmation; delete related photos and text in the database. |
-| **FR-6** | Copy, cut, and paste **plain text** in title, ingredients, steps, and notes (Ctrl+C / Ctrl+V / Ctrl+X). |
-
-### Upload and download
-
-| ID | Requirement |
-|----|----------------|
-| **FR-7** | Upload a `.txt` file: create a new recipe or fill the current one from that text. Content is then stored in the database. |
-| **FR-8** | Upload photo files (at least `.jpg` / `.jpeg` and `.png`): attach them to the current recipe; store image bytes in the database. |
-| **FR-9** | Reject unsupported file types with a clear message; the app must not crash. |
-| **FR-10** | Download / export the current recipe as a `.txt` file chosen by the user. |
-| **FR-11** | Download / export attached photos as image files to a folder the user chooses. |
-
-### Skins
-
-| ID | Requirement |
-|----|----------------|
-| **FR-12** | Provide at least **Light** and **Dark** skins. |
-| **FR-13** | Remember the selected skin in the database and apply it on the next launch. |
-
-### Quality of behavior
-
-| ID | Requirement |
-|----|----------------|
-| **FR-14** | Show a readable error if a photo blob cannot be displayed; do not crash. |
-| **FR-15** | Do not delete or overwrite files outside what the user picked in import/export dialogs. |
+- Default path (to confirm in code): user data directory, e.g. under the user’s home, file name `cooking-notebook.db`.
+- Create tables on first launch (simple `CREATE TABLE IF NOT EXISTS` in v1; migrations tool later if the schema grows).
+- Backup: copy `cooking-notebook.db` while the app is closed.
 
 ---
 
-## 4. Recipe content
+## 3. Schema
 
-| Field | Required | Notes |
-|-------|----------|--------|
-| Title | Yes | Shown in the list |
-| Ingredients | No | List of lines |
-| Steps | No | Numbered or free text |
-| Notes | No | Tips, variants |
-| Tags | No | Free text tags (e.g. `dessert`, `quick`) |
-| Photos | No | One or more images in the database |
-| Created / updated | Yes | Set automatically |
+Identifiers are integers. Renaming a title never breaks photo rows.
+
+```sql
+CREATE TABLE IF NOT EXISTS recipes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  notes TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ingredients (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  recipe_id INTEGER NOT NULL,
+  position INTEGER NOT NULL,
+  text TEXT NOT NULL,
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS steps (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  recipe_id INTEGER NOT NULL,
+  position INTEGER NOT NULL,
+  text TEXT NOT NULL,
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tags (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  recipe_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS photos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  recipe_id INTEGER NOT NULL,
+  position INTEGER NOT NULL,
+  file_name TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  bytes BLOB NOT NULL,
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+```
+
+- Enable foreign keys: `PRAGMA foreign_keys = ON`.
+- Skin: row `key = 'skin'`, `value = 'light'` or `'dark'`.
+- Timestamps: ISO-8601 UTC strings for simplicity.
 
 ---
 
-## 5. Non-functional requirements
+## 4. UI (version 1)
 
-| ID | Requirement |
-|----|----------------|
-| **NFR-1** | Language: Java 21. UI: JavaFX. Build: Maven. |
-| **NFR-2** | Database: local **SQLite** file on this PC (no server, no cloud). |
-| **NFR-3** | App usable without a network connection. |
-| **NFR-4** | Backup = copy the SQLite file (and document where it lives). |
-| **NFR-5** | Automated tests for database and domain logic (JUnit). UI tests may come later. |
+One window:
 
----
+- **Left:** list of recipe titles (from `SELECT id, title FROM recipes ORDER BY updated_at DESC`).
+- **Right:** editor (title, ingredients, steps, notes, tags, photo thumbnails).
+- **Menu or toolbar:** New, Save, Delete, Import txt, Import photos, Export txt, Export photos, Settings (skin).
 
-## 6. Out of scope (version 1)
-
-- Cloud sync, accounts, multi-user
-- Public website or social features
-- Nutrition, shopping-list AI, video
-- Mobile apps
-- Zip “recipe pack” export (nice later, not required now)
+Copy-paste uses normal JavaFX text controls (FR-6).
 
 ---
 
-## 7. Future (not version 1)
+## 5. Import / export
 
-Search/filters, servings scaler, print view, extra import formats, cookbooks/collections, step timer, unit conversion.
+| Action | Behavior |
+|--------|----------|
+| Import `.txt` | Read UTF-8 text; map to title (first line) + body (rest) or all body into notes if empty — pick one mapping in implementation and test it. Persist via repositories, not leftover files. |
+| Import photos | Read file bytes into `photos.bytes`. |
+| Export `.txt` | Write current recipe fields to a user-chosen path. |
+| Export photos | Write each blob to the chosen folder using `file_name`. |
 
-These must still use the **same database** when added.
+Temporary files must not become a second database.
 
 ---
 
-## 8. Open decisions (defaults if unset)
+## 6. Testing
 
-| Topic | Default until you change it |
-|-------|-----------------------------|
-| Save | Explicit **Save** button (plus save on confirmed navigation if needed) |
-| Tags | Free text, stored in the database |
-| Photo size | Store as uploaded; no compression required in v1 |
+- **JUnit 5** + in-memory or temp-file SQLite for repository tests (CRUD, cascade delete, settings skin).
+- Do **not** require a display for repository tests.
+- JavaFX UI tests: optional later; not blocking version 1 data tests.
+
+Map tests to requirement IDs in test names where practical, e.g. `saveRecipe_persistsTitle_FR4`.
+
+---
+
+## 7. Libraries (planned)
+
+| Library | Role |
+|---------|------|
+| JavaFX | UI and CSS skins |
+| SQLite JDBC (e.g. org.xerial:sqlite-jdbc) | Database |
+| JUnit 5 | Tests |
+
+No Spring in version 1.
+
+---
+
+## 8. Risks
+
+| Risk | Mitigation |
+|------|------------|
+| Large photos inflate the `.db` file | Accept in v1; document backup size |
+| SQLite native bits on Windows | Use a well-known JDBC driver that bundles natives |
+| JavaFX tests on CI without UI | Keep domain tests headless |
 
 ---
 
@@ -132,6 +149,4 @@ These must still use the **same database** when added.
 
 | Version | Date | Change |
 |---------|------|--------|
-| 0.1 | 2026-09-30 | First SSD draft |
-| 0.2 | 2026-09-30 | All durable data in a local database |
-| 0.3 | 2026-09-30 | SSD is the canonical “what” document (not `requirements.md`) |
+| 0.1 | 2026-09-30 | SQLite schema and layers from requirements v0.2 |
