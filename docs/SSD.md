@@ -1,137 +1,318 @@
 # Software Specification Document (SSD)
 
-**Project:** Cooking Notebook  
-**Version:** 0.3  
-**Date:** 2026-09-30  
-**Status:** Source of truth for **what** the product must do. Code starts when tasks in `docs/tasks.md` are implemented.
+## Project: Cooking Notebook
 
-Do not implement features that are not in this SSD (or a later version of it).
+Version: 1.0
 
-Related files: [`design.md`](design.md) (how), [`tasks.md`](tasks.md) (work order).
+Status: Planning & Design Phase
 
----
-
-## 1. Product
-
-Cooking Notebook is a **personal recipe notebook**: a **Java desktop** app on this computer.
-
-The user can write recipes, copy-paste text, upload and download **txt** and **photos**, change **skins**, and add features later **without losing data**.
-
-**One user on this PC.** No login in version 1. No internet required.
-
-**Persistence:** all app data is stored in a **local database** (see FR-DATA). Import/export files are only a way to move data in and out; they are not the system of record.
+Last Updated: October 2026
 
 ---
 
-## 2. Users
+# 1. Product Overview
 
-| User | Need |
-|------|------|
-| Home cook | Keep recipes, notes, and photos in one place |
-| Beginner developer | Small project that grows in clear steps |
+Cooking Notebook is a desktop application for storing, organizing, searching, and managing cooking recipes.
 
----
+The application is intended for personal use and runs completely on the local computer without requiring internet access.
 
-## 3. Functional requirements
-
-IDs are stable. Tasks and tests should refer to them (e.g. `FR-1`).
-
-### Data and notebook
-
-| ID | Requirement |
-|----|----------------|
-| **FR-DATA** | Persist **all** durable data in a **local database**: recipes, ingredients, steps, notes, tags, photos (image bytes), timestamps, and user settings (including selected skin). No JSON/file tree as the primary store. |
-| **FR-1** | Create a new recipe (default title such as “Untitled recipe”). |
-| **FR-2** | Open a recipe from a list of saved recipes. |
-| **FR-3** | Edit title, ingredients, steps, notes, and tags. |
-| **FR-4** | Save changes so they survive closing the app (database commit). |
-| **FR-5** | Delete a recipe only after confirmation; delete related photos and text in the database. |
-| **FR-6** | Copy, cut, and paste **plain text** in title, ingredients, steps, and notes (Ctrl+C / Ctrl+V / Ctrl+X). |
-
-### Upload and download
-
-| ID | Requirement |
-|----|----------------|
-| **FR-7** | Upload a `.txt` file: create a new recipe or fill the current one from that text. Content is then stored in the database. |
-| **FR-8** | Upload photo files (at least `.jpg` / `.jpeg` and `.png`): attach them to the current recipe; store image bytes in the database. |
-| **FR-9** | Reject unsupported file types with a clear message; the app must not crash. |
-| **FR-10** | Download / export the current recipe as a `.txt` file chosen by the user. |
-| **FR-11** | Download / export attached photos as image files to a folder the user chooses. |
-
-### Skins
-
-| ID | Requirement |
-|----|----------------|
-| **FR-12** | Provide at least **Light** and **Dark** skins. |
-| **FR-13** | Remember the selected skin in the database and apply it on the next launch. |
-
-### Quality of behavior
-
-| ID | Requirement |
-|----|----------------|
-| **FR-14** | Show a readable error if a photo blob cannot be displayed; do not crash. |
-| **FR-15** | Do not delete or overwrite files outside what the user picked in import/export dialogs. |
+The main goal is to provide a convenient digital recipe notebook with support for ingredients, recipe categories, photos, searching, filtering, and future data import/export.
 
 ---
 
-## 4. Recipe content
+# 2. Target Users
 
-| Field | Required | Notes |
-|-------|----------|--------|
-| Title | Yes | Shown in the list |
-| Ingredients | No | List of lines |
-| Steps | No | Numbered or free text |
-| Notes | No | Tips, variants |
-| Tags | No | Free text tags (e.g. `dessert`, `quick`) |
-| Photos | No | One or more images in the database |
-| Created / updated | Yes | Set automatically |
+### Primary User
 
----
+A home cook who wants to:
 
-## 5. Non-functional requirements
+- store recipes digitally;
+- organize recipes by category;
+- quickly search for recipes;
+- attach photos to recipes;
+- manage a growing personal collection of recipes.
 
-| ID | Requirement |
-|----|----------------|
-| **NFR-1** | Language: Java 21. UI: JavaFX. Build: Maven. |
-| **NFR-2** | Database: local **SQLite** file on this PC (no server, no cloud). |
-| **NFR-3** | App usable without a network connection. |
-| **NFR-4** | Backup = copy the SQLite file (and document where it lives). |
-| **NFR-5** | Automated tests for database and domain logic (JUnit). UI tests may come later. |
+### Usage Model
+
+The application is designed as a:
+
+- single-user desktop application;
+- local-first application;
+- offline application.
+
+No user accounts or authentication are required.
 
 ---
 
-## 6. Out of scope (version 1)
+# 3. Functional Requirements
 
-- Cloud sync, accounts, multi-user
-- Public website or social features
-- Nutrition, shopping-list AI, video
-- Mobile apps
-- Zip “recipe pack” export (nice later, not required now)
+## FR-001 Recipe Management
+
+The system shall allow users to:
+
+- create recipes;
+- edit recipes;
+- delete recipes;
+- view recipe details;
+- duplicate recipes.
+
+Each recipe shall contain:
+
+- title;
+- description;
+- cooking instructions;
+- preparation time;
+- number of servings;
+- category;
+- ingredient list;
+- optional photo.
+
+## FR-002 Ingredient Management
+
+The system shall allow users to:
+
+- add ingredients to recipes;
+- update ingredients;
+- remove ingredients.
+
+Each ingredient shall contain:
+
+- name;
+- quantity;
+- measurement unit.
+
+## FR-003 Category Management
+
+The system shall support recipe categorization.
+
+Example categories:
+
+- Breakfast
+- Lunch
+- Dinner
+- Soup
+- Dessert
+- Drinks
+
+Users shall be able to create additional custom categories.
+
+## FR-004 Search and Filtering
+
+The system shall support:
+
+- search by recipe title;
+- search by ingredient name;
+- filtering by category.
+
+## FR-005 Photo Support
+
+The system shall allow users to attach photos to recipes.
+
+Photo data shall be stored in the application database.
+
+## FR-006 Data Persistence
+
+All application data shall be stored permanently.
+
+The system shall preserve:
+
+- recipes;
+- ingredients;
+- categories;
+- photos;
+- application settings.
+
+## FR-007 Import and Export
+
+Future versions shall support:
+
+- export recipes;
+- import recipes;
+- backup creation;
+- backup restoration.
+
+## FR-008 Application Settings
+
+The system shall allow users to configure:
+
+- application theme;
+- appearance options;
+- future preference settings.
 
 ---
 
-## 7. Future (not version 1)
+# 4. Non-Functional Requirements
 
-Search/filters, servings scaler, print view, extra import formats, cookbooks/collections, step timer, unit conversion.
+## NFR-001 Performance
 
-These must still use the **same database** when added.
+The application should start within a few seconds.
+
+## NFR-002 Reliability
+
+The application shall not lose user data during normal operation.
+
+## NFR-003 Maintainability
+
+The codebase shall follow clean architecture principles.
+
+## NFR-004 Usability
+
+The user interface should be simple and intuitive.
+
+## NFR-005 Offline Usage
+
+The application must function without internet access.
+
+## NFR-006 Portability
+
+The application should run on modern Windows systems.
 
 ---
 
-## 8. Open decisions (defaults if unset)
+# 5. Technology Stack
 
-| Topic | Default until you change it |
-|-------|-----------------------------|
-| Save | Explicit **Save** button (plus save on confirmed navigation if needed) |
-| Tags | Free text, stored in the database |
-| Photo size | Store as uploaded; no compression required in v1 |
+- Java 21
+- Maven
+- JavaFX
+- SQLite
+- JUnit 5
+- Git
+- GitHub
 
 ---
 
-## 9. History
+# 6. High-Level Architecture
 
-| Version | Date | Change |
-|---------|------|--------|
-| 0.1 | 2026-09-30 | First SSD draft |
-| 0.2 | 2026-09-30 | All durable data in a local database |
-| 0.3 | 2026-09-30 | SSD is the canonical “what” document (not `requirements.md`) |
+```text
+JavaFX UI
+    ↓
+Service Layer
+    ↓
+Repository Layer
+    ↓
+SQLite Database
+```
+
+### JavaFX UI
+
+Responsible for user interaction.
+
+### Service Layer
+
+Responsible for business logic and validation.
+
+### Repository Layer
+
+Responsible for database access and CRUD operations.
+
+### Database Layer
+
+Responsible for persistent storage.
+
+---
+
+# 7. Core Entities
+
+## Recipe
+
+- id
+- title
+- description
+- instructions
+- preparationTime
+- servings
+- categoryId
+- photoId
+
+## Ingredient
+
+- id
+- recipeId
+- name
+- quantity
+- unit
+
+## Category
+
+- id
+- name
+
+## Photo
+
+- id
+- recipeId
+- imageData
+
+## ApplicationSettings
+
+- theme
+- language
+- windowSize
+
+---
+
+# 8. Out of Scope
+
+The following features are not included in the first version:
+
+- cloud synchronization;
+- multi-user support;
+- online recipe sharing;
+- mobile application;
+- web application;
+- social features;
+- user authentication;
+- external API integrations.
+
+---
+
+# 9. MVP Roadmap
+
+## MVP-1
+
+Core recipe management.
+
+## MVP-2
+
+SQLite persistence.
+
+## MVP-3
+
+Search and filtering.
+
+## MVP-4
+
+Photo support.
+
+## MVP-5
+
+Themes and settings.
+
+## MVP-6
+
+Import / Export.
+
+---
+
+# 10. Future Enhancements
+
+- advanced search;
+- import/export formats;
+- printing recipes;
+- shopping lists;
+- nutrition information;
+- Linux support;
+- macOS support.
+
+---
+
+# 11. Development Workflow
+
+SSD
+→ Design
+→ Tasks
+→ Implementation
+→ Testing
+→ Commit
+
+This document serves as the primary source of truth for the project.
