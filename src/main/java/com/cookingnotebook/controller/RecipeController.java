@@ -31,7 +31,23 @@ public class RecipeController {
     public void saveRecipe(ActionEvent event) {
         String title = recipeTitleField.getText();
         if (!title.isEmpty()) {
+    public void saveRecipe(ActionEvent event) {
+        String title = recipeTitleField.getText();
+        if (!title.isEmpty()) {
             Recipe recipe = new Recipe(title, "", "", 0, 0, 1, 1, null);
+            recipeService.saveRecipe(recipe);
+            recipeTable.refresh();
+            recipeTitleField.clear();
+        }
+    }
+
+    public void deleteRecipe(ActionEvent event) {
+        Recipe selectedRecipe = recipeTable.getSelectionModel().getSelectedItem();
+        if (selectedRecipe != null) {
+            recipeService.deleteRecipe(selectedRecipe);
+            recipeTable.getItems().remove(selectedRecipe);
+        }
+    }
             recipeService.saveRecipe(recipe);
             recipeTable.refresh();
             recipeTitleField.clear();
