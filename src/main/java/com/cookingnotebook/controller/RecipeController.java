@@ -2,32 +2,63 @@ package com.cookingnotebook.controller;
 
 import com.cookingnotebook.model.Recipe;
 import com.cookingnotebook.service.RecipeService;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.TableView;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextArea;
 
 public class RecipeController {
-
-    @FXML
-    private TableView<Recipe> recipeTable;
+	private Recipe selectedRecipe;
 
     @FXML
     private TextField recipeTitleField;
+	
+	@FXML
+private TextArea descriptionArea;
 
     @FXML
     private Button saveButton;
+	
+	@FXML
+private Button deleteButton;
 
     @FXML
-    private Button deleteButton;
+    private ListView<Recipe> recipeList;
 
     private RecipeService recipeService;
 
+    private final ObservableList<Recipe> recipes =
+        FXCollections.observableArrayList();
+
     @FXML
     public void initialize() {
+
         recipeService = new RecipeService();
+
+        recipeList.setItems(recipes);
+
+
+        recipeList.getSelectionModel()
+        .selectedItemProperty()
+        .addListener((obs, oldValue, newValue) -> {
+
+            
+            if (newValue != null) {
+
+    selectedRecipe = newValue;
+
+    recipeTitleField.setText(
+            newValue.getTitle());
+
+    descriptionArea.setText(
+            newValue.getDescription());
+}
+        });
     }
 
     public boolean validateRecipeTitle(String title) {
@@ -51,29 +82,61 @@ public class RecipeController {
             return;
         }
 
-        Recipe recipe = new Recipe(
-                title.trim(),
-                "",
-                "",
-                0,
-                0,
-                1,
-                1
-        );
+        String description = descriptionArea.getText();
 
-        recipeService.saveRecipe(recipe);
+if (selectedRecipe == null) {
 
-        recipeTitleField.clear();
+    Recipe recipe = new Recipe(
+            title.trim(),
+            description,
+            "",
+            0,
+            0,
+            1,
+            1
+    );
+
+    recipeService.saveRecipe(recipe);
+
+    recipes.add(recipe);
+
+} else {
+
+    selectedRecipe.setTitle(title.trim());
+    selectedRecipe.setDescription(description);
+
+    recipeList.refresh();
+}
+
+recipeTitleField.clear();
+descriptionArea.clear();
+
+selectedRecipe = null;
+
+recipeList.getSelectionModel().clearSelection();
+	}
+	@FXML
+public void deleteRecipe(ActionEvent event) {
+
+    Recipe selectedRecipe =
+            recipeList.getSelectionModel().getSelectedItem();
+
+    if (selectedRecipe == null) {
+
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Удаление рецепта");
+        alert.setHeaderText(null);
+        alert.setContentText("Сначала выберите рецепт.");
+
+        alert.showAndWait();
+        return;
     }
 
-    @FXML
-    public void deleteRecipe(ActionEvent event) {
+    recipeService.deleteRecipe(selectedRecipe);
 
-        Recipe selectedRecipe =
-                recipeTable.getSelectionModel().getSelectedItem();
+    recipes.remove(selectedRecipe);
 
-        if (selectedRecipe != null) {
-            recipeService.deleteRecipe(selectedRecipe);
-        }
-    }
+    recipeTitleField.clear();
+    descriptionArea.clear();
+}
 }

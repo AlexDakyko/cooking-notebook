@@ -97,4 +97,8 @@ public class Recipe implements Serializable {
     public void setPhotoId(int photoId) {
         this.photoId = photoId;
     }
+	@Override
+public String toString() {
+    return title;
+}
 }
