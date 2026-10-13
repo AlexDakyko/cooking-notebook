@@ -3,6 +3,7 @@ package com.cookingnotebook.model;
 import java.io.Serializable;
 
 public class Recipe implements Serializable {
+
     private int id;
     private String title;
     private String description;
@@ -15,7 +16,15 @@ public class Recipe implements Serializable {
     public Recipe() {
     }
 
-    public Recipe(String title, String description, String instructions, int preparationTime, int servings, int categoryId, int photoId) {
+    public Recipe(
+            String title,
+            String description,
+            String instructions,
+            int preparationTime,
+            int servings,
+            int categoryId,
+            int photoId) {
+
         this.title = title;
         this.description = description;
         this.instructions = instructions;
@@ -25,7 +34,6 @@ public class Recipe implements Serializable {
         this.photoId = photoId;
     }
 
-    // Getters and Setters
     public int getId() {
         return id;
     }
@@ -86,7 +94,7 @@ public class Recipe implements Serializable {
         return photoId;
     }
 
-    public void setPhotoId(int photo, int photoId) {
+    public void setPhotoId(int photoId) {
         this.photoId = photoId;
     }
 }
