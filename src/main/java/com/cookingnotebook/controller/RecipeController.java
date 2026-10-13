@@ -2,50 +2,78 @@ package com.cookingnotebook.controller;
 
 import com.cookingnotebook.model.Recipe;
 import com.cookingnotebook.service.RecipeService;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 
-import java.io.IOException;
-
 public class RecipeController {
+
     @FXML
     private TableView<Recipe> recipeTable;
+
     @FXML
     private TextField recipeTitleField;
+
     @FXML
     private Button saveButton;
+
     @FXML
     private Button deleteButton;
 
     private RecipeService recipeService;
 
+    @FXML
     public void initialize() {
         recipeService = new RecipeService();
-        recipeTable.setItems(recipeService.getAllRecipes());
     }
 
+    public boolean validateRecipeTitle(String title) {
+        return title != null && !title.isBlank();
+    }
+
+    @FXML
     public void saveRecipe(ActionEvent event) {
+
         String title = recipeTitleField.getText();
-        if (!title.isEmpty()) {
 
+        if (!validateRecipeTitle(title)) {
 
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Validation Error");
+            alert.setHeaderText("Invalid Recipe Title");
+            alert.setContentText(
+                    "Recipe title cannot be empty or contain only whitespace.");
 
-            Recipe recipe = new Recipe(title, "", "", 0, 0, 1, 1, null);
-            recipeService.saveRecipe(recipe);
-            recipeTable.refresh();
-            recipeTitleField.clear();
+            alert.showAndWait();
+            return;
         }
+
+        Recipe recipe = new Recipe(
+                title.trim(),
+                "",
+                "",
+                0,
+                0,
+                1,
+                1
+        );
+
+        recipeService.saveRecipe(recipe);
+
+        recipeTitleField.clear();
     }
 
+    @FXML
     public void deleteRecipe(ActionEvent event) {
-        Recipe selectedRecipe = recipeTable.getSelectionModel().getSelectedItem();
+
+        Recipe selectedRecipe =
+                recipeTable.getSelectionModel().getSelectedItem();
+
         if (selectedRecipe != null) {
             recipeService.deleteRecipe(selectedRecipe);
-            recipeTable.getItems().remove(selectedRecipe);
         }
     }
 }
