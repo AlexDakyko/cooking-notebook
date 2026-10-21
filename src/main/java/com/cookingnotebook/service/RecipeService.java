@@ -1,21 +1,38 @@
 package com.cookingnotebook.service;
 
 import com.cookingnotebook.model.Recipe;
-import java.util.ArrayList;
+import com.cookingnotebook.repository.InMemoryRecipeRepository;
+import com.cookingnotebook.repository.RecipeRepository;
+
 import java.util.List;
+import com.cookingnotebook.repository.SQLiteRecipeRepository;
 
 public class RecipeService {
-    private List<Recipe> recipes = new ArrayList<>();
+
+    private final RecipeRepository repository;
+
+    public RecipeService() {
+        repository = new SQLiteRecipeRepository();
+    }
 
     public void saveRecipe(Recipe recipe) {
-        recipes.add(recipe);
+        repository.saveRecipe(recipe);
     }
 
     public List<Recipe> getAllRecipes() {
-        return recipes;
+        return repository.getAllRecipes();
     }
 
     public void deleteRecipe(Recipe recipe) {
-        recipes.remove(recipe);
+        repository.deleteRecipe(recipe);
     }
+	
+	public List<Recipe> loadRecipes() {
+    return repository.getAllRecipes();
+}
+
+public void updateRecipe(Recipe recipe) {
+    repository.updateRecipe(recipe);
+}
+
 }

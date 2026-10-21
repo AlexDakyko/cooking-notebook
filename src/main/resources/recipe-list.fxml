@@ -29,7 +29,11 @@
     <center>
         <VBox spacing="10" style="-fx-padding: 10;">
 
-            <Label text="Название"/>
+            <Label
+                fx:id="modeLabel"
+                text="Новый рецепт"/>
+
+        <Label text="Название"/>
 
             <TextField
                     fx:id="recipeTitleField"
@@ -51,7 +55,7 @@
 				
 				<Button
         fx:id="saveButton"
-        text="Новый рецепт"
+        text="Сохранить"
         onAction="#saveRecipe"/>
 
             </HBox>

@@ -7,4 +7,5 @@ public interface RecipeRepository {
     List<Recipe> getAllRecipes();
     void saveRecipe(Recipe recipe);
     void deleteRecipe(Recipe recipe);
+	void updateRecipe(Recipe recipe);
 }
