@@ -21,19 +21,27 @@
     </top>
 
     <left>
-	<ListView
-        fx:id="recipeList"
-        prefWidth="250"/>
+        <VBox spacing="5" style="-fx-padding: 5;">
+
+            <TextField
+                    fx:id="searchField"
+                    promptText="Поиск рецептов..."/>
+
+            <ListView
+                    fx:id="recipeList"
+                    prefWidth="250"/>
+
+        </VBox>
     </left>
 
     <center>
         <VBox spacing="10" style="-fx-padding: 10;">
 
             <Label
-                fx:id="modeLabel"
-                text="Новый рецепт"/>
+                    fx:id="modeLabel"
+                    text="Новый рецепт"/>
 
-        <Label text="Название"/>
+            <Label text="Название"/>
 
             <TextField
                     fx:id="recipeTitleField"
@@ -42,21 +50,21 @@
             <Label text="Описание"/>
 
             <TextArea
-        fx:id="descriptionArea"
-        prefRowCount="8"
-        promptText="Описание рецепта"/>
+                    fx:id="descriptionArea"
+                    prefRowCount="8"
+                    promptText="Описание рецепта"/>
 
             <HBox spacing="10">
 
                 <Button
-        fx:id="deleteButton"
-        text="Удалить рецепт"
-        onAction="#deleteRecipe"/>
-				
-				<Button
-        fx:id="saveButton"
-        text="Сохранить"
-        onAction="#saveRecipe"/>
+                        fx:id="deleteButton"
+                        text="Удалить рецепт"
+                        onAction="#deleteRecipe"/>
+
+                <Button
+                        fx:id="saveButton"
+                        text="Сохранить"
+                        onAction="#saveRecipe"/>
 
             </HBox>
 

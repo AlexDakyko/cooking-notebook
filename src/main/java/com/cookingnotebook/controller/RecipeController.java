@@ -31,6 +31,9 @@ public class RecipeController {
 
     @FXML
     private Button deleteButton;
+	
+	@FXML
+private TextField searchField;
 
     @FXML
     private ListView<Recipe> recipeList;
@@ -39,15 +42,21 @@ public class RecipeController {
 
     private final ObservableList<Recipe> recipes =
             FXCollections.observableArrayList();
+			
+	private final ObservableList<Recipe> filteredRecipes =
+        FXCollections.observableArrayList();		
 
     @FXML
     public void initialize() {
 
         recipeService = new RecipeService();
 
-        recipeList.setItems(recipes);
-		recipes.addAll(
+        recipeList.setItems(filteredRecipes);
+
+recipes.addAll(
         recipeService.loadRecipes());
+
+filteredRecipes.addAll(recipes);
 
         recipeList.getSelectionModel()
                 .selectedItemProperty()
@@ -66,6 +75,30 @@ public class RecipeController {
                                 newValue.getDescription());
                     }
                 });
+				
+		searchField.textProperty()
+        .addListener((obs, oldValue, newValue) -> {
+
+            filteredRecipes.clear();
+
+            String searchText =
+                    newValue.toLowerCase().trim();
+
+            if (searchText.isEmpty()) {
+
+                filteredRecipes.addAll(recipes);
+
+            } else {
+
+                recipes.stream()
+                        .filter(recipe ->
+                                recipe.getTitle()
+                                        .toLowerCase()
+                                        .contains(searchText))
+                        .forEach(filteredRecipes::add);
+            }
+        });
+		
     }
 
     public boolean validateRecipeTitle(String title) {
@@ -106,6 +139,7 @@ public class RecipeController {
             recipeService.saveRecipe(recipe);
 
             recipes.add(recipe);
+			filteredRecipes.add(recipe);
 
         } else {
 
@@ -147,6 +181,7 @@ recipeList.refresh();
         recipeService.deleteRecipe(recipeToDelete);
 
         recipes.remove(recipeToDelete);
+		filteredRecipes.remove(recipeToDelete);
 
         recipeTitleField.clear();
         descriptionArea.clear();
@@ -157,4 +192,5 @@ recipeList.refresh();
 
         modeLabel.setText("Новый рецепт");
     }
+	
 }
