@@ -16,6 +16,7 @@ import javafx.scene.control.TextField;
 public class RecipeController {
 
     private Recipe selectedRecipe;
+	private boolean hasUnsavedChanges;
 
     @FXML
     private Label modeLabel;
@@ -34,6 +35,7 @@ public class RecipeController {
 	
 	@FXML
 private TextField searchField;
+
 
     @FXML
     private ListView<Recipe> recipeList;
@@ -66,7 +68,7 @@ filteredRecipes.addAll(recipes);
 
                         selectedRecipe = newValue;
 
-                        modeLabel.setText("Редактирование рецепта");
+                        updateModeLabel();
 
                         recipeTitleField.setText(
                                 newValue.getTitle());
@@ -98,6 +100,25 @@ filteredRecipes.addAll(recipes);
                         .forEach(filteredRecipes::add);
             }
         });
+		
+		recipeTitleField.textProperty()
+        .addListener((obs, oldValue, newValue) -> {
+
+            hasUnsavedChanges = true;
+
+            updateModeLabel();
+        });
+		
+		descriptionArea.textProperty()
+        .addListener((obs, oldValue, newValue) -> {
+
+            hasUnsavedChanges = true;
+
+            updateModeLabel();
+        });
+		
+		hasUnsavedChanges = false;
+updateModeLabel();
 		
     }
 
@@ -154,9 +175,10 @@ recipeList.refresh();
         recipeTitleField.clear();
         descriptionArea.clear();
 
+hasUnsavedChanges = false;
         selectedRecipe = null;
 
-        modeLabel.setText("Новый рецепт");
+        updateModeLabel();
 
         recipeList.getSelectionModel().clearSelection();
     }
@@ -186,11 +208,29 @@ recipeList.refresh();
         recipeTitleField.clear();
         descriptionArea.clear();
 
+hasUnsavedChanges = false;
         this.selectedRecipe = null;
 
         recipeList.getSelectionModel().clearSelection();
 
-        modeLabel.setText("Новый рецепт");
+        updateModeLabel();
     }
+	
+	private void updateModeLabel() {
+
+    String text;
+
+    if (selectedRecipe == null) {
+        text = "Новый рецепт";
+    } else {
+        text = "Редактирование рецепта";
+    }
+
+    if (hasUnsavedChanges) {
+        text += " *";
+    }
+
+    modeLabel.setText(text);
+}
 	
 }
