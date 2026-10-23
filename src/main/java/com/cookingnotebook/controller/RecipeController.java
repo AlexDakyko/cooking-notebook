@@ -8,15 +8,20 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ComboBox;
+import java.util.Comparator;
 
 public class RecipeController {
 
     private Recipe selectedRecipe;
-	private boolean hasUnsavedChanges;
+    private boolean hasUnsavedChanges;
+    private boolean loadingRecipe;
 
     @FXML
     private Label modeLabel;
@@ -32,10 +37,12 @@ public class RecipeController {
 
     @FXML
     private Button deleteButton;
+
+    @FXML
+    private TextField searchField;
 	
 	@FXML
-private TextField searchField;
-
+private ComboBox<String> sortComboBox;
 
     @FXML
     private ListView<Recipe> recipeList;
@@ -44,9 +51,9 @@ private TextField searchField;
 
     private final ObservableList<Recipe> recipes =
             FXCollections.observableArrayList();
-			
-	private final ObservableList<Recipe> filteredRecipes =
-        FXCollections.observableArrayList();		
+
+    private final ObservableList<Recipe> filteredRecipes =
+            FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
@@ -55,71 +62,131 @@ private TextField searchField;
 
         recipeList.setItems(filteredRecipes);
 
-recipes.addAll(
-        recipeService.loadRecipes());
+        recipes.addAll(recipeService.loadRecipes());
 
-filteredRecipes.addAll(recipes);
+        filteredRecipes.addAll(recipes);
+		
+		sortComboBox.getItems().addAll(
+        "По названию А-Я",
+        "По названию Я-А"
+);
+
+sortComboBox.setValue(
+        "По названию А-Я");
+		sortRecipes();
+
+sortComboBox.valueProperty()
+        .addListener((obs, oldValue, newValue) -> {
+
+            sortRecipes();
+        });
+
 
         recipeList.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((obs, oldValue, newValue) -> {
 
-                    if (newValue != null) {
+                    if (newValue == null) {
+                        return;
+                    }
 
-                        selectedRecipe = newValue;
+                    if (newValue == selectedRecipe) {
+                        return;
+                    }
 
-                        updateModeLabel();
+                    if (!confirmUnsavedChanges()) {
 
-                        recipeTitleField.setText(
-                                newValue.getTitle());
+                        loadingRecipe = true;
+                        recipeList.getSelectionModel().select(oldValue);
+                        loadingRecipe = false;
 
-                        descriptionArea.setText(
-                                newValue.getDescription());
+                        return;
+                    }
+
+                    loadingRecipe = true;
+
+                    selectedRecipe = newValue;
+
+                    recipeTitleField.setText(
+                            newValue.getTitle());
+
+                    descriptionArea.setText(
+                            newValue.getDescription());
+
+                    hasUnsavedChanges = false;
+
+                    loadingRecipe = false;
+
+                    updateModeLabel();
+                });
+
+        searchField.textProperty()
+                .addListener((obs, oldValue, newValue) -> {
+
+                    filteredRecipes.clear();
+
+                    String searchText =
+                            newValue == null
+                                    ? ""
+                                    : newValue.toLowerCase().trim();
+
+                    if (searchText.isEmpty()) {
+
+                        filteredRecipes.addAll(recipes);
+
+                    } else {
+
+                        recipes.stream()
+                                .filter(recipe -> {
+
+                                    String title =
+                                            recipe.getTitle() == null
+                                                    ? ""
+                                                    : recipe.getTitle()
+                                                            .toLowerCase();
+
+                                    String description =
+                                            recipe.getDescription() == null
+                                                    ? ""
+                                                    : recipe.getDescription()
+                                                            .toLowerCase();
+
+                                    return title.contains(searchText)
+                                            || description.contains(searchText);
+                                })
+                                .forEach(filteredRecipes::add);
+								sortRecipes();
                     }
                 });
-				
-		searchField.textProperty()
-        .addListener((obs, oldValue, newValue) -> {
 
-            filteredRecipes.clear();
+        recipeTitleField.textProperty()
+                .addListener((obs, oldValue, newValue) -> {
 
-            String searchText =
-                    newValue.toLowerCase().trim();
+                    if (loadingRecipe) {
+                        return;
+                    }
 
-            if (searchText.isEmpty()) {
+                    hasUnsavedChanges = true;
 
-                filteredRecipes.addAll(recipes);
+                    updateModeLabel();
+                });
 
-            } else {
+        descriptionArea.textProperty()
+                .addListener((obs, oldValue, newValue) -> {
 
-                recipes.stream()
-                        .filter(recipe ->
-                                recipe.getTitle()
-                                        .toLowerCase()
-                                        .contains(searchText))
-                        .forEach(filteredRecipes::add);
-            }
-        });
-		
-		recipeTitleField.textProperty()
-        .addListener((obs, oldValue, newValue) -> {
+                    if (loadingRecipe) {
+                        return;
+                    }
 
-            hasUnsavedChanges = true;
+                    hasUnsavedChanges = true;
 
-            updateModeLabel();
-        });
-		
-		descriptionArea.textProperty()
-        .addListener((obs, oldValue, newValue) -> {
+                    updateModeLabel();
+                });
 
-            hasUnsavedChanges = true;
+        hasUnsavedChanges = false;
 
-            updateModeLabel();
-        });
-		
-		hasUnsavedChanges = false;
-updateModeLabel();
-		
+        updateModeLabel();
+		sortRecipes();
     }
 
     public boolean validateRecipeTitle(String title) {
@@ -140,6 +207,7 @@ updateModeLabel();
                     "Recipe title cannot be empty or contain only whitespace.");
 
             alert.showAndWait();
+
             return;
         }
 
@@ -160,22 +228,35 @@ updateModeLabel();
             recipeService.saveRecipe(recipe);
 
             recipes.add(recipe);
-			filteredRecipes.add(recipe);
+
+            if (searchField.getText() == null
+                    || searchField.getText().isBlank()) {
+
+                filteredRecipes.add(recipe);
+            }
+
+            hasUnsavedChanges = false;
 
         } else {
 
             selectedRecipe.setTitle(title.trim());
-selectedRecipe.setDescription(description);
+            selectedRecipe.setDescription(description);
 
-recipeService.updateRecipe(selectedRecipe);
+            recipeService.updateRecipe(selectedRecipe);
 
-recipeList.refresh();
+            recipeList.refresh();
+
+            hasUnsavedChanges = false;
         }
+
+        loadingRecipe = true;
 
         recipeTitleField.clear();
         descriptionArea.clear();
 
-hasUnsavedChanges = false;
+        loadingRecipe = false;
+
+        hasUnsavedChanges = false;
         selectedRecipe = null;
 
         updateModeLabel();
@@ -197,40 +278,156 @@ hasUnsavedChanges = false;
             alert.setContentText("Сначала выберите рецепт.");
 
             alert.showAndWait();
+
+            return;
+        }
+
+        ButtonType deleteButtonType =
+                new ButtonType(
+                        "Удалить",
+                        ButtonBar.ButtonData.OK_DONE);
+
+        ButtonType cancelButtonType =
+                new ButtonType(
+                        "Отмена",
+                        ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        Alert confirmAlert =
+                new Alert(Alert.AlertType.CONFIRMATION);
+
+        confirmAlert.setTitle("Удаление рецепта");
+        confirmAlert.setHeaderText(null);
+
+        confirmAlert.setContentText(
+                "Вы уверены, что хотите удалить рецепт:\n\n"
+                        + recipeToDelete.getTitle() + "?");
+
+        confirmAlert.getButtonTypes().setAll(
+                deleteButtonType,
+                cancelButtonType);
+
+        ButtonType result =
+                confirmAlert.showAndWait()
+                        .orElse(cancelButtonType);
+
+        if (result != deleteButtonType) {
             return;
         }
 
         recipeService.deleteRecipe(recipeToDelete);
 
         recipes.remove(recipeToDelete);
-		filteredRecipes.remove(recipeToDelete);
+        filteredRecipes.remove(recipeToDelete);
+
+        loadingRecipe = true;
 
         recipeTitleField.clear();
         descriptionArea.clear();
 
-hasUnsavedChanges = false;
-        this.selectedRecipe = null;
+        loadingRecipe = false;
+
+        hasUnsavedChanges = false;
+        selectedRecipe = null;
 
         recipeList.getSelectionModel().clearSelection();
 
         updateModeLabel();
     }
 	
-	private void updateModeLabel() {
+	private void sortRecipes() {
 
-    String text;
+    if (sortComboBox.getValue() == null) {
+        return;
+    }
 
-    if (selectedRecipe == null) {
-        text = "Новый рецепт";
+    if (sortComboBox.getValue()
+            .equals("По названию А-Я")) {
+
+        filteredRecipes.sort(
+                Comparator.comparing(
+                        Recipe::getTitle,
+                        String.CASE_INSENSITIVE_ORDER));
+
     } else {
-        text = "Редактирование рецепта";
-    }
 
-    if (hasUnsavedChanges) {
-        text += " *";
+        filteredRecipes.sort(
+                Comparator.comparing(
+                        Recipe::getTitle,
+                        String.CASE_INSENSITIVE_ORDER)
+                        .reversed());
     }
-
-    modeLabel.setText(text);
 }
-	
+
+    private boolean confirmUnsavedChanges() {
+
+        if (!hasUnsavedChanges) {
+            return true;
+        }
+
+        ButtonType saveButton =
+                new ButtonType(
+                        "Сохранить",
+                        ButtonBar.ButtonData.YES);
+
+        ButtonType discardButton =
+                new ButtonType(
+                        "Не сохранять",
+                        ButtonBar.ButtonData.NO);
+
+        ButtonType cancelButton =
+                new ButtonType(
+                        "Отмена",
+                        ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        Alert alert =
+                new Alert(Alert.AlertType.CONFIRMATION);
+
+        alert.setTitle("Несохранённые изменения");
+        alert.setHeaderText("Рецепт был изменён");
+
+        alert.setContentText(
+                "Сохранить изменения перед переключением?");
+
+        alert.getButtonTypes().setAll(
+                saveButton,
+                discardButton,
+                cancelButton);
+
+        ButtonType result =
+                alert.showAndWait()
+                        .orElse(cancelButton);
+
+        if (result == saveButton) {
+
+            saveRecipe(null);
+
+            return true;
+        }
+
+        if (result == discardButton) {
+
+            hasUnsavedChanges = false;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private void updateModeLabel() {
+
+        String text;
+
+        if (selectedRecipe == null) {
+            text = "Новый рецепт";
+        } else {
+            text = "Редактирование рецепта";
+        }
+
+        if (hasUnsavedChanges) {
+            text += " *";
+        }
+
+        modeLabel.setText(text);
+    }
 }

@@ -9,6 +9,8 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.ComboBox?>
+
 
 <BorderPane
         xmlns:fx="http://javafx.com/fxml"
@@ -26,6 +28,9 @@
             <TextField
                     fx:id="searchField"
                     promptText="Поиск рецептов..."/>
+					
+					<ComboBox fx:id="sortComboBox"
+          prefWidth="180" />
 
             <ListView
                     fx:id="recipeList"
