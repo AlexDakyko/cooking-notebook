@@ -1,6 +1,7 @@
 package com.cookingnotebook.model;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 public class Recipe implements Serializable {
 
@@ -12,6 +13,9 @@ public class Recipe implements Serializable {
     private int servings;
     private int categoryId;
     private int photoId;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public Recipe() {
     }
@@ -97,8 +101,25 @@ public class Recipe implements Serializable {
     public void setPhotoId(int photoId) {
         this.photoId = photoId;
     }
-	@Override
-public String toString() {
-    return title;
-}
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    @Override
+    public String toString() {
+        return title;
+    }
 }

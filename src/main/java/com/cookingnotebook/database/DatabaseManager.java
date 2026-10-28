@@ -18,11 +18,13 @@ public class DatabaseManager {
 
     public void initializeDatabase() {
 
-        String sql = """
+        String createTableSql = """
                 CREATE TABLE IF NOT EXISTS recipes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
-                    description TEXT
+                    description TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
                 )
                 """;
 
@@ -32,13 +34,32 @@ public class DatabaseManager {
                         connection.createStatement()
         ) {
 
-            statement.execute(sql);
+            statement.execute(createTableSql);
 
-        } catch (SQLException e) {
+            statement.execute(
+                    """
+                    ALTER TABLE recipes
+                    ADD COLUMN created_at TEXT
+                    """
+            );
 
-            throw new RuntimeException(
-                    "Failed to initialize database",
-                    e);
+        } catch (SQLException ignored) {
+        }
+
+        try (
+                Connection connection = getConnection();
+                Statement statement =
+                        connection.createStatement()
+        ) {
+
+            statement.execute(
+                    """
+                    ALTER TABLE recipes
+                    ADD COLUMN updated_at TEXT
+                    """
+            );
+
+        } catch (SQLException ignored) {
         }
     }
 }

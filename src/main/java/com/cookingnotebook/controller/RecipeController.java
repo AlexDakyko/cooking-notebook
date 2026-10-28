@@ -10,11 +10,13 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.control.ComboBox;
+
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 
 public class RecipeController {
@@ -23,8 +25,18 @@ public class RecipeController {
     private boolean hasUnsavedChanges;
     private boolean loadingRecipe;
 
+    private final DateTimeFormatter formatter =
+            DateTimeFormatter.ofPattern(
+                    "dd.MM.yyyy HH:mm");
+
     @FXML
     private Label modeLabel;
+
+    @FXML
+    private Label createdAtLabel;
+
+    @FXML
+    private Label updatedAtLabel;
 
     @FXML
     private TextField recipeTitleField;
@@ -40,9 +52,9 @@ public class RecipeController {
 
     @FXML
     private TextField searchField;
-	
-	@FXML
-private ComboBox<String> sortComboBox;
+
+    @FXML
+    private ComboBox<String> sortComboBox;
 
     @FXML
     private ListView<Recipe> recipeList;
@@ -65,22 +77,20 @@ private ComboBox<String> sortComboBox;
         recipes.addAll(recipeService.loadRecipes());
 
         filteredRecipes.addAll(recipes);
-		
-		sortComboBox.getItems().addAll(
-        "По названию А-Я",
-        "По названию Я-А"
-);
 
-sortComboBox.setValue(
-        "По названию А-Я");
-		sortRecipes();
+        sortComboBox.getItems().addAll(
+                "По названию А-Я",
+                "По названию Я-А"
+        );
 
-sortComboBox.valueProperty()
-        .addListener((obs, oldValue, newValue) -> {
+        sortComboBox.setValue(
+                "По названию А-Я");
 
-            sortRecipes();
-        });
+        sortComboBox.valueProperty()
+                .addListener((obs, oldValue, newValue) ->
+                        sortRecipes());
 
+        sortRecipes();
 
         recipeList.getSelectionModel()
                 .selectedItemProperty()
@@ -97,7 +107,10 @@ sortComboBox.valueProperty()
                     if (!confirmUnsavedChanges()) {
 
                         loadingRecipe = true;
-                        recipeList.getSelectionModel().select(oldValue);
+
+                        recipeList.getSelectionModel()
+                                .select(oldValue);
+
                         loadingRecipe = false;
 
                         return;
@@ -112,6 +125,8 @@ sortComboBox.valueProperty()
 
                     descriptionArea.setText(
                             newValue.getDescription());
+
+                    updateDateLabels(newValue);
 
                     hasUnsavedChanges = false;
 
@@ -143,20 +158,21 @@ sortComboBox.valueProperty()
                                             recipe.getTitle() == null
                                                     ? ""
                                                     : recipe.getTitle()
-                                                            .toLowerCase();
+                                                    .toLowerCase();
 
                                     String description =
                                             recipe.getDescription() == null
                                                     ? ""
                                                     : recipe.getDescription()
-                                                            .toLowerCase();
+                                                    .toLowerCase();
 
                                     return title.contains(searchText)
                                             || description.contains(searchText);
                                 })
                                 .forEach(filteredRecipes::add);
-								sortRecipes();
                     }
+
+                    sortRecipes();
                 });
 
         recipeTitleField.textProperty()
@@ -186,7 +202,10 @@ sortComboBox.valueProperty()
         hasUnsavedChanges = false;
 
         updateModeLabel();
-		sortRecipes();
+
+        sortRecipes();
+
+        clearDateLabels();
     }
 
     public boolean validateRecipeTitle(String title) {
@@ -235,6 +254,8 @@ sortComboBox.valueProperty()
                 filteredRecipes.add(recipe);
             }
 
+            sortRecipes();
+
             hasUnsavedChanges = false;
 
         } else {
@@ -258,6 +279,8 @@ sortComboBox.valueProperty()
 
         hasUnsavedChanges = false;
         selectedRecipe = null;
+
+        clearDateLabels();
 
         updateModeLabel();
 
@@ -329,34 +352,74 @@ sortComboBox.valueProperty()
         hasUnsavedChanges = false;
         selectedRecipe = null;
 
+        clearDateLabels();
+
         recipeList.getSelectionModel().clearSelection();
 
         updateModeLabel();
     }
-	
-	private void sortRecipes() {
 
-    if (sortComboBox.getValue() == null) {
-        return;
+    private void sortRecipes() {
+
+        if (sortComboBox.getValue() == null) {
+            return;
+        }
+
+        if (sortComboBox.getValue()
+                .equals("По названию А-Я")) {
+
+            filteredRecipes.sort(
+                    Comparator.comparing(
+                            Recipe::getTitle,
+                            String.CASE_INSENSITIVE_ORDER));
+
+        } else {
+
+            filteredRecipes.sort(
+                    Comparator.comparing(
+                            Recipe::getTitle,
+                            String.CASE_INSENSITIVE_ORDER)
+                            .reversed());
+        }
     }
 
-    if (sortComboBox.getValue()
-            .equals("По названию А-Я")) {
+    private void updateDateLabels(Recipe recipe) {
 
-        filteredRecipes.sort(
-                Comparator.comparing(
-                        Recipe::getTitle,
-                        String.CASE_INSENSITIVE_ORDER));
+        if (recipe.getCreatedAt() != null) {
 
-    } else {
+            createdAtLabel.setText(
+                    "Создан: "
+                            + recipe.getCreatedAt()
+                            .format(formatter));
 
-        filteredRecipes.sort(
-                Comparator.comparing(
-                        Recipe::getTitle,
-                        String.CASE_INSENSITIVE_ORDER)
-                        .reversed());
+        } else {
+
+            createdAtLabel.setText(
+                    "Создан: -");
+        }
+
+        if (recipe.getUpdatedAt() != null) {
+
+            updatedAtLabel.setText(
+                    "Изменён: "
+                            + recipe.getUpdatedAt()
+                            .format(formatter));
+
+        } else {
+
+            updatedAtLabel.setText(
+                    "Изменён: -");
+        }
     }
-}
+
+    private void clearDateLabels() {
+
+        createdAtLabel.setText(
+                "Создан: -");
+
+        updatedAtLabel.setText(
+                "Изменён: -");
+    }
 
     private boolean confirmUnsavedChanges() {
 

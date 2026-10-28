@@ -3,15 +3,16 @@ package com.cookingnotebook.repository;
 import com.cookingnotebook.database.DatabaseManager;
 import com.cookingnotebook.model.Recipe;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
+import java.time.LocalDateTime;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SQLiteRecipeRepository
         implements RecipeRepository {
@@ -24,159 +25,221 @@ public class SQLiteRecipeRepository
     }
 
     @Override
-public List<Recipe> getAllRecipes() {
+    public List<Recipe> getAllRecipes() {
 
-    List<Recipe> recipes = new ArrayList<>();
+        List<Recipe> recipes =
+                new ArrayList<>();
 
-    String sql = "SELECT id, title, description FROM recipes";
+        String sql =
+                """
+                SELECT
+                    id,
+                    title,
+                    description,
+                    created_at,
+                    updated_at
+                FROM recipes
+                """;
 
-    try (
-            Connection connection =
-                    databaseManager.getConnection();
+        try (
+                Connection connection =
+                        databaseManager.getConnection();
 
-            Statement statement =
-                    connection.createStatement();
+                Statement statement =
+                        connection.createStatement();
 
-            ResultSet resultSet =
-                    statement.executeQuery(sql)
-    ) {
+                ResultSet resultSet =
+                        statement.executeQuery(sql)
+        ) {
 
-        while (resultSet.next()) {
+            while (resultSet.next()) {
 
-            Recipe recipe = new Recipe();
-
-            recipe.setId(
-                    resultSet.getInt("id"));
-
-            recipe.setTitle(
-                    resultSet.getString("title"));
-
-            recipe.setDescription(
-                    resultSet.getString("description"));
-
-            recipes.add(recipe);
-        }
-
-    } catch (SQLException e) {
-
-        throw new RuntimeException(
-                "Failed to load recipes",
-                e);
-    }
-
-    return recipes;
-}
-
-    @Override
-public void saveRecipe(Recipe recipe) {
-
-    String sql =
-            "INSERT INTO recipes(title, description) VALUES(?, ?)";
-
-    try (
-            Connection connection =
-                    databaseManager.getConnection();
-
-            PreparedStatement statement =
-                    connection.prepareStatement(
-                            sql,
-                            Statement.RETURN_GENERATED_KEYS)
-    ) {
-
-        statement.setString(
-                1,
-                recipe.getTitle());
-
-        statement.setString(
-                2,
-                recipe.getDescription());
-
-        statement.executeUpdate();
-
-        try (ResultSet keys =
-                     statement.getGeneratedKeys()) {
-
-            if (keys.next()) {
+                Recipe recipe = new Recipe();
 
                 recipe.setId(
-                        keys.getInt(1));
+                        resultSet.getInt("id"));
+
+                recipe.setTitle(
+                        resultSet.getString("title"));
+
+                recipe.setDescription(
+                        resultSet.getString("description"));
+
+                String createdAt =
+                        resultSet.getString("created_at");
+
+                if (createdAt != null
+                        && !createdAt.isBlank()) {
+
+                    recipe.setCreatedAt(
+                            LocalDateTime.parse(createdAt));
+                }
+
+                String updatedAt =
+                        resultSet.getString("updated_at");
+
+                if (updatedAt != null
+                        && !updatedAt.isBlank()) {
+
+                    recipe.setUpdatedAt(
+                            LocalDateTime.parse(updatedAt));
+                }
+
+                recipes.add(recipe);
             }
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Failed to load recipes",
+                    e);
         }
 
-    } catch (SQLException e) {
-
-        throw new RuntimeException(
-                "Failed to save recipe",
-                e);
+        return recipes;
     }
-}
 
     @Override
-public void deleteRecipe(Recipe recipe) {
+    public void saveRecipe(Recipe recipe) {
 
-    String sql =
-            "DELETE FROM recipes WHERE id = ?";
+        LocalDateTime now =
+                LocalDateTime.now();
 
-    try (
-            Connection connection =
-                    databaseManager.getConnection();
+        recipe.setCreatedAt(now);
+        recipe.setUpdatedAt(now);
 
-            PreparedStatement statement =
-                    connection.prepareStatement(sql)
-    ) {
+        String sql =
+                """
+                INSERT INTO recipes(
+                    title,
+                    description,
+                    created_at,
+                    updated_at
+                )
+                VALUES(?, ?, ?, ?)
+                """;
 
-        statement.setInt(
-                1,
-                recipe.getId());
+        try (
+                Connection connection =
+                        databaseManager.getConnection();
 
-        statement.executeUpdate();
+                PreparedStatement statement =
+                        connection.prepareStatement(
+                                sql,
+                                Statement.RETURN_GENERATED_KEYS)
+        ) {
 
-    } catch (SQLException e) {
+            statement.setString(
+                    1,
+                    recipe.getTitle());
 
-        throw new RuntimeException(
-                "Failed to delete recipe",
-                e);
+            statement.setString(
+                    2,
+                    recipe.getDescription());
+
+            statement.setString(
+                    3,
+                    recipe.getCreatedAt().toString());
+
+            statement.setString(
+                    4,
+                    recipe.getUpdatedAt().toString());
+
+            statement.executeUpdate();
+
+            try (
+                    ResultSet keys =
+                            statement.getGeneratedKeys()
+            ) {
+
+                if (keys.next()) {
+
+                    recipe.setId(
+                            keys.getInt(1));
+                }
+            }
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Failed to save recipe",
+                    e);
+        }
     }
-}
-	
-	@Override
-public void updateRecipe(Recipe recipe) {
 
-    String sql =
-            """
-            UPDATE recipes
-            SET title = ?,
-                description = ?
-            WHERE id = ?
-            """;
+    @Override
+    public void updateRecipe(Recipe recipe) {
 
-    try (
-            Connection connection =
-                    databaseManager.getConnection();
+        recipe.setUpdatedAt(
+                LocalDateTime.now());
 
-            PreparedStatement statement =
-                    connection.prepareStatement(sql)
-    ) {
+        String sql =
+                """
+                UPDATE recipes
+                SET title = ?,
+                    description = ?,
+                    updated_at = ?
+                WHERE id = ?
+                """;
 
-        statement.setString(
-                1,
-                recipe.getTitle());
+        try (
+                Connection connection =
+                        databaseManager.getConnection();
 
-        statement.setString(
-                2,
-                recipe.getDescription());
+                PreparedStatement statement =
+                        connection.prepareStatement(sql)
+        ) {
 
-        statement.setInt(
-                3,
-                recipe.getId());
+            statement.setString(
+                    1,
+                    recipe.getTitle());
 
-        statement.executeUpdate();
+            statement.setString(
+                    2,
+                    recipe.getDescription());
 
-    } catch (SQLException e) {
+            statement.setString(
+                    3,
+                    recipe.getUpdatedAt().toString());
 
-        throw new RuntimeException(
-                "Failed to update recipe",
-                e);
+            statement.setInt(
+                    4,
+                    recipe.getId());
+
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Failed to update recipe",
+                    e);
+        }
     }
-}
+
+    @Override
+    public void deleteRecipe(Recipe recipe) {
+
+        String sql =
+                "DELETE FROM recipes WHERE id = ?";
+
+        try (
+                Connection connection =
+                        databaseManager.getConnection();
+
+                PreparedStatement statement =
+                        connection.prepareStatement(sql)
+        ) {
+
+            statement.setInt(
+                    1,
+                    recipe.getId());
+
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Failed to delete recipe",
+                    e);
+        }
+    }
 }
