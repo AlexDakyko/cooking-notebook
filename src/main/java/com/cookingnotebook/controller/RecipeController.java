@@ -26,8 +26,7 @@ public class RecipeController {
     private boolean loadingRecipe;
 
     private final DateTimeFormatter formatter =
-            DateTimeFormatter.ofPattern(
-                    "dd.MM.yyyy HH:mm");
+            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     @FXML
     private Label modeLabel;
@@ -75,7 +74,6 @@ public class RecipeController {
         recipeList.setItems(filteredRecipes);
 
         recipes.addAll(recipeService.loadRecipes());
-
         filteredRecipes.addAll(recipes);
 
         sortComboBox.getItems().addAll(
@@ -83,14 +81,11 @@ public class RecipeController {
                 "По названию Я-А"
         );
 
-        sortComboBox.setValue(
-                "По названию А-Я");
+        sortComboBox.setValue("По названию А-Я");
 
         sortComboBox.valueProperty()
                 .addListener((obs, oldValue, newValue) ->
                         sortRecipes());
-
-        sortRecipes();
 
         recipeList.getSelectionModel()
                 .selectedItemProperty()
@@ -105,75 +100,19 @@ public class RecipeController {
                     }
 
                     if (!confirmUnsavedChanges()) {
-
                         loadingRecipe = true;
-
                         recipeList.getSelectionModel()
                                 .select(oldValue);
-
                         loadingRecipe = false;
-
                         return;
                     }
 
-                    loadingRecipe = true;
-
-                    selectedRecipe = newValue;
-
-                    recipeTitleField.setText(
-                            newValue.getTitle());
-
-                    descriptionArea.setText(
-                            newValue.getDescription());
-
-                    updateDateLabels(newValue);
-
-                    hasUnsavedChanges = false;
-
-                    loadingRecipe = false;
-
-                    updateModeLabel();
+                    loadRecipeToForm(newValue);
                 });
 
         searchField.textProperty()
-                .addListener((obs, oldValue, newValue) -> {
-
-                    filteredRecipes.clear();
-
-                    String searchText =
-                            newValue == null
-                                    ? ""
-                                    : newValue.toLowerCase().trim();
-
-                    if (searchText.isEmpty()) {
-
-                        filteredRecipes.addAll(recipes);
-
-                    } else {
-
-                        recipes.stream()
-                                .filter(recipe -> {
-
-                                    String title =
-                                            recipe.getTitle() == null
-                                                    ? ""
-                                                    : recipe.getTitle()
-                                                    .toLowerCase();
-
-                                    String description =
-                                            recipe.getDescription() == null
-                                                    ? ""
-                                                    : recipe.getDescription()
-                                                    .toLowerCase();
-
-                                    return title.contains(searchText)
-                                            || description.contains(searchText);
-                                })
-                                .forEach(filteredRecipes::add);
-                    }
-
-                    sortRecipes();
-                });
+                .addListener((obs, oldValue, newValue) ->
+                        filterRecipes());
 
         recipeTitleField.textProperty()
                 .addListener((obs, oldValue, newValue) -> {
@@ -183,7 +122,6 @@ public class RecipeController {
                     }
 
                     hasUnsavedChanges = true;
-
                     updateModeLabel();
                 });
 
@@ -195,16 +133,13 @@ public class RecipeController {
                     }
 
                     hasUnsavedChanges = true;
-
                     updateModeLabel();
                 });
 
         hasUnsavedChanges = false;
 
         updateModeLabel();
-
         sortRecipes();
-
         clearDateLabels();
     }
 
@@ -226,7 +161,6 @@ public class RecipeController {
                     "Recipe title cannot be empty or contain only whitespace.");
 
             alert.showAndWait();
-
             return;
         }
 
@@ -250,13 +184,10 @@ public class RecipeController {
 
             if (searchField.getText() == null
                     || searchField.getText().isBlank()) {
-
                 filteredRecipes.add(recipe);
             }
 
             sortRecipes();
-
-            hasUnsavedChanges = false;
 
         } else {
 
@@ -266,25 +197,11 @@ public class RecipeController {
             recipeService.updateRecipe(selectedRecipe);
 
             recipeList.refresh();
-
-            hasUnsavedChanges = false;
         }
 
-        loadingRecipe = true;
-
-        recipeTitleField.clear();
-        descriptionArea.clear();
-
-        loadingRecipe = false;
-
         hasUnsavedChanges = false;
-        selectedRecipe = null;
 
-        clearDateLabels();
-
-        updateModeLabel();
-
-        recipeList.getSelectionModel().clearSelection();
+        resetEditor();
     }
 
     @FXML
@@ -295,7 +212,9 @@ public class RecipeController {
 
         if (recipeToDelete == null) {
 
-            Alert alert = new Alert(Alert.AlertType.WARNING);
+            Alert alert =
+                    new Alert(Alert.AlertType.WARNING);
+
             alert.setTitle("Удаление рецепта");
             alert.setHeaderText(null);
             alert.setContentText("Сначала выберите рецепт.");
@@ -320,7 +239,6 @@ public class RecipeController {
 
         confirmAlert.setTitle("Удаление рецепта");
         confirmAlert.setHeaderText(null);
-
         confirmAlert.setContentText(
                 "Вы уверены, что хотите удалить рецепт:\n\n"
                         + recipeToDelete.getTitle() + "?");
@@ -342,21 +260,88 @@ public class RecipeController {
         recipes.remove(recipeToDelete);
         filteredRecipes.remove(recipeToDelete);
 
+        resetEditor();
+    }
+
+    private void clearForm() {
+
         loadingRecipe = true;
 
         recipeTitleField.clear();
         descriptionArea.clear();
 
         loadingRecipe = false;
+    }
+
+    private void loadRecipeToForm(Recipe recipe) {
+
+        loadingRecipe = true;
+
+        selectedRecipe = recipe;
+
+        recipeTitleField.setText(recipe.getTitle());
+        descriptionArea.setText(recipe.getDescription());
+
+        updateDateLabels(recipe);
 
         hasUnsavedChanges = false;
+        loadingRecipe = false;
+
+        updateModeLabel();
+    }
+
+    private void resetEditor() {
+
+        clearForm();
+
         selectedRecipe = null;
+        hasUnsavedChanges = false;
 
         clearDateLabels();
 
-        recipeList.getSelectionModel().clearSelection();
+        recipeList.getSelectionModel()
+                .clearSelection();
 
         updateModeLabel();
+    }
+
+    private void filterRecipes() {
+
+        filteredRecipes.clear();
+
+        String searchText =
+                searchField.getText() == null
+                        ? ""
+                        : searchField.getText()
+                        .toLowerCase()
+                        .trim();
+
+        if (searchText.isEmpty()) {
+
+            filteredRecipes.addAll(recipes);
+
+        } else {
+
+            recipes.stream()
+                    .filter(recipe -> {
+
+                        String title =
+                                recipe.getTitle() == null
+                                        ? ""
+                                        : recipe.getTitle().toLowerCase();
+
+                        String description =
+                                recipe.getDescription() == null
+                                        ? ""
+                                        : recipe.getDescription().toLowerCase();
+
+                        return title.contains(searchText)
+                                || description.contains(searchText);
+                    })
+                    .forEach(filteredRecipes::add);
+        }
+
+        sortRecipes();
     }
 
     private void sortRecipes() {
@@ -394,8 +379,7 @@ public class RecipeController {
 
         } else {
 
-            createdAtLabel.setText(
-                    "Создан: -");
+            createdAtLabel.setText("Создан: -");
         }
 
         if (recipe.getUpdatedAt() != null) {
@@ -407,18 +391,14 @@ public class RecipeController {
 
         } else {
 
-            updatedAtLabel.setText(
-                    "Изменён: -");
+            updatedAtLabel.setText("Изменён: -");
         }
     }
 
     private void clearDateLabels() {
 
-        createdAtLabel.setText(
-                "Создан: -");
-
-        updatedAtLabel.setText(
-                "Изменён: -");
+        createdAtLabel.setText("Создан: -");
+        updatedAtLabel.setText("Изменён: -");
     }
 
     private boolean confirmUnsavedChanges() {
@@ -447,7 +427,6 @@ public class RecipeController {
 
         alert.setTitle("Несохранённые изменения");
         alert.setHeaderText("Рецепт был изменён");
-
         alert.setContentText(
                 "Сохранить изменения перед переключением?");
 
@@ -462,15 +441,18 @@ public class RecipeController {
 
         if (result == saveButton) {
 
-            saveRecipe(null);
+    String title = recipeTitleField.getText();
 
-            return true;
-        }
+    if (!validateRecipeTitle(title)) {
+        return false;
+    }
+
+    saveRecipe(null);
+    return true;
+}
 
         if (result == discardButton) {
-
             hasUnsavedChanges = false;
-
             return true;
         }
 

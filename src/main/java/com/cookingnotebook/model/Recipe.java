@@ -13,6 +13,7 @@ public class Recipe implements Serializable {
     private int servings;
     private int categoryId;
     private int photoId;
+	private String category;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -35,8 +36,17 @@ public class Recipe implements Serializable {
         this.preparationTime = preparationTime;
         this.servings = servings;
         this.categoryId = categoryId;
-        this.photoId = photoId;
-    }
+        this.photoId = photoId;		
+		}
+		
+		public String getCategory() {
+    return category;
+}
+
+public void setCategory(String category) {
+    this.category = category;
+}
+    
 
     public int getId() {
         return id;

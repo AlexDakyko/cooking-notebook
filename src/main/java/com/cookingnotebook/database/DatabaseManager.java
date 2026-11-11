@@ -24,7 +24,8 @@ public class DatabaseManager {
                     title TEXT NOT NULL,
                     description TEXT,
                     created_at TEXT,
-                    updated_at TEXT
+                    updated_at TEXT,
+                    category TEXT
                 )
                 """;
 
@@ -35,29 +36,6 @@ public class DatabaseManager {
         ) {
 
             statement.execute(createTableSql);
-
-            statement.execute(
-                    """
-                    ALTER TABLE recipes
-                    ADD COLUMN created_at TEXT
-                    """
-            );
-
-        } catch (SQLException ignored) {
-        }
-
-        try (
-                Connection connection = getConnection();
-                Statement statement =
-                        connection.createStatement()
-        ) {
-
-            statement.execute(
-                    """
-                    ALTER TABLE recipes
-                    ADD COLUMN updated_at TEXT
-                    """
-            );
 
         } catch (SQLException ignored) {
         }
