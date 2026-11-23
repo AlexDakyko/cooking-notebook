@@ -43,4 +43,9 @@ public class InMemoryIngredientRepository implements IngredientRepository {
         ingredients.removeIf(candidate ->
                 candidate.getId() == ingredient.getId());
     }
+
+    public void clear() {
+        ingredients.clear();
+        nextId = 1;
+    }
 }

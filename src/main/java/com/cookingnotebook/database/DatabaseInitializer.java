@@ -54,7 +54,7 @@ public class DatabaseInitializer {
                 }
 
                 if (legacyRecipesExist) {
-                    migrateLegacyRecipeTable(connection);
+                    ensureCompleteRecipeSchema(connection);
                 }
 
                 createSupportingTables(connection);
@@ -97,6 +97,112 @@ public class DatabaseInitializer {
                         value TEXT NOT NULL
                     )
                     """);
+        }
+    }
+
+    private void ensureCompleteRecipeSchema(Connection connection)
+            throws SQLException {
+        if (!tableExists(connection, "recipes")) {
+            return;
+        }
+
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS categories (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL UNIQUE
+                    )
+                    """);
+        }
+        seedCategories(connection);
+
+        addColumnIfMissing(
+                connection,
+                "recipes",
+                "instructions",
+                "TEXT");
+        addColumnIfMissing(
+                connection,
+                "recipes",
+                "preparation_time",
+                "INTEGER");
+        addColumnIfMissing(
+                connection,
+                "recipes",
+                "servings",
+                "INTEGER");
+        addColumnIfMissing(
+                connection,
+                "recipes",
+                "category_id",
+                "INTEGER");
+        addColumnIfMissing(
+                connection,
+                "recipes",
+                "created_at",
+                "TEXT");
+        addColumnIfMissing(
+                connection,
+                "recipes",
+                "updated_at",
+                "TEXT");
+
+        migrateLegacyCategoryNames(connection);
+        recordMigration(connection, 1);
+    }
+
+    private void addColumnIfMissing(
+            Connection connection,
+            String table,
+            String column,
+            String type) throws SQLException {
+        try (ResultSet columns = connection.getMetaData()
+                .getColumns(null, null, table, column)) {
+            if (columns.next()) {
+                return;
+            }
+        }
+        try (Statement statement = connection.createStatement()) {
+            statement.execute(
+                    "ALTER TABLE " + table
+                            + " ADD COLUMN " + column
+                            + " " + type);
+        }
+    }
+
+    private void migrateLegacyCategoryNames(Connection connection)
+            throws SQLException {
+        if (!columnExists(connection, "recipes", "category")) {
+            return;
+        }
+
+        try (Statement select = connection.createStatement();
+             ResultSet rows = select.executeQuery(
+                     "SELECT id, category FROM recipes "
+                             + "WHERE category IS NOT NULL")) {
+            while (rows.next()) {
+                Integer categoryId =
+                        migrateCategory(connection, rows.getString("category"));
+                if (categoryId == null) {
+                    continue;
+                }
+                try (PreparedStatement update = connection.prepareStatement(
+                        "UPDATE recipes SET category_id = ? WHERE id = ?")) {
+                    update.setInt(1, categoryId);
+                    update.setInt(2, rows.getInt("id"));
+                    update.executeUpdate();
+                }
+            }
+        }
+    }
+
+    private boolean columnExists(
+            Connection connection,
+            String table,
+            String column) throws SQLException {
+        try (ResultSet columns = connection.getMetaData()
+                .getColumns(null, null, table, column)) {
+            return columns.next();
         }
     }
 

@@ -12,6 +12,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.ScrollPane?>
 
 <BorderPane
         xmlns:fx="http://javafx.com/fxml"
@@ -47,7 +48,8 @@
     </left>
 
     <center>
-        <VBox spacing="10" style="-fx-padding: 10;">
+        <ScrollPane fitToWidth="true">
+            <VBox spacing="10" style="-fx-padding: 10;">
 
             <Label
                     fx:id="modeLabel"
@@ -94,37 +96,50 @@
                     fx:id="categoryComboBox"
                     prefWidth="220"/>
 
-            <Label text="Ингредиенты"/>
+            <Label
+                    text="Ингредиенты"
+                    style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
             <ListView
                     fx:id="ingredientList"
                     prefHeight="100"/>
 
-            <HBox spacing="5">
+            <VBox
+                    spacing="7"
+                    style="-fx-background-color: #eef1f4; -fx-border-color: #b9c1c9; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 10;">
+
+                <Label
+                        text="↓ Введите новый ингредиент ниже"
+                        style="-fx-text-fill: #4d5966; -fx-font-weight: bold;"/>
+
+                <HBox spacing="5">
                 <TextField
                         fx:id="ingredientNameField"
-                        promptText="Название"
+                        promptText="Название ингредиента"
                         prefWidth="180"/>
                 <TextField
                         fx:id="ingredientQuantityField"
-                        promptText="Кол-во"
+                        promptText="Количество"
                         prefWidth="70"/>
                 <TextField
                         fx:id="ingredientUnitField"
-                        promptText="Ед."
+                        promptText="Единица"
                         prefWidth="70"/>
-            </HBox>
+                </HBox>
 
-            <HBox spacing="10">
+                <HBox spacing="10">
                 <Button
-                        text="Добавить ингредиент"
-                        onAction="#addIngredient"/>
+                        fx:id="addIngredientButton"
+                        text="+ Добавить ингредиент"
+                        onAction="#addIngredient"
+                        style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 8 14 8 14;"/>
                 <Button
                         text="Сохранить ингредиент"
                         onAction="#updateIngredient"/>
                 <Button
                         text="Удалить ингредиент"
                         onAction="#deleteIngredient"/>
-            </HBox>
+                </HBox>
+            </VBox>
 
             <Label text="Фото"/>
             <ImageView
@@ -158,6 +173,12 @@
             <HBox spacing="10">
 
                 <Button
+                        fx:id="newRecipeButton"
+                        text="+ Новый рецепт"
+                        onAction="#newRecipe"
+                        style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-font-weight: bold;"/>
+
+                <Button
                         fx:id="deleteButton"
                         text="Удалить рецепт"
                         onAction="#deleteRecipe"/>
@@ -170,6 +191,7 @@
             </HBox>
 
         </VBox>
+        </ScrollPane>
     </center>
 
     <bottom>

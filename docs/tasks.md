@@ -2,7 +2,7 @@
 
 **Project:** Cooking Notebook
 **Version:** 1.0
-**Status:** Approved Backlog
+**Status:** In Progress
 **Based on:** SSD v1.0 and Design v1.0
 
 ---
@@ -153,6 +153,46 @@ A task can be marked complete only when:
 - [ ] T9.5 Full regression test run
 - [ ] T9.6 Fix remaining defects
 - [ ] T9.7 Create Version 1.0 release tag
+
+---
+
+# Next Steps (Next Work Session)
+
+The database, domain, repository, and service foundations are implemented. The
+recipe editor currently supports recipe CRUD, title/description search,
+category filtering, ingredients, and photo import/display/export. The latest
+clean automated run passed 26 tests. Manual UI verification is still pending;
+previous user testing uncovered workflow defects, so automated success alone
+must not be treated as acceptance.
+
+Work in this order:
+
+1. **Run a manual UI smoke test (T6.11).**
+   - Launch with `mvn javafx:run`.
+   - Create and save multiple recipes, including one with ingredients and a photo.
+   - Verify the timestamps update, fields clear with **New Recipe**, and the
+     recipe list, category filter, search, update, and delete behave correctly.
+   - Record any remaining defects and add regression tests before proceeding.
+2. **Implement TXT recipe export/import (T7.1–T7.2).**
+   - Define and document a versioned, unambiguous text format before coding.
+   - Export/import all supported recipe fields and ingredients; do not silently
+     omit unsupported data such as photos.
+   - Validate malformed files and ensure a failed import does not leave partial
+     recipe data.
+3. **Complete import/export tests (T7.5–T7.6).**
+   - Add round-trip, special-character, empty-field, malformed-input, and
+     failure/rollback tests for recipe files.
+   - Retain photo validation and persistence coverage; add UI coverage for
+     file selection workflows where practical.
+4. **Implement themes/settings (T8.1–T8.6).**
+   - Persist theme settings in SQLite, apply them at startup, and test defaults,
+     switching, and restart persistence.
+5. **Stabilize and update documentation (T9.1–T9.6).**
+   - Address missing/corrupt photos and user-facing errors, document backup and
+     restore, then run the full regression suite and manual acceptance checks.
+
+Do not mark a task complete until its implementation, relevant automated tests,
+and required manual checks pass.
 
 ---
 

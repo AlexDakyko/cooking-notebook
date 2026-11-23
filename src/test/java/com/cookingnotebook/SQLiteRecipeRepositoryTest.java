@@ -233,4 +233,59 @@ class SQLiteRecipeRepositoryTest {
         assertEquals(0, ingredientRepository.getByRecipeId(recipe.getId()).size());
         assertEquals(0, photoRepository.getByRecipeId(recipe.getId()).size());
     }
+
+    @Test
+    void upgradesSchemaMarkedAsVersionOneWithMissingColumns() throws Exception {
+        Path existingFile =
+                tempDirectory.resolve("already-versioned.db");
+        DatabaseManager existingManager =
+                new DatabaseManager(
+                        "jdbc:sqlite:" + existingFile.toAbsolutePath());
+
+        try (Connection connection = existingManager.getConnection();
+             Statement statement = connection.createStatement()) {
+            statement.execute("""
+                    CREATE TABLE recipes (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        title TEXT NOT NULL,
+                        description TEXT,
+                        created_at TEXT,
+                        updated_at TEXT,
+                        category TEXT
+                    )
+                    """);
+            statement.execute("""
+                    INSERT INTO recipes(title, description, created_at, updated_at, category)
+                    VALUES('Already Versioned', 'Description',
+                           '2026-01-01T10:00', '2026-01-02T10:00', 'Soup')
+                    """);
+            statement.execute("""
+                    CREATE TABLE schema_migrations (
+                        version INTEGER PRIMARY KEY,
+                        applied_at TEXT NOT NULL
+                    )
+                    """);
+            statement.execute(
+                    "INSERT INTO schema_migrations(version, applied_at) "
+                            + "VALUES(1, datetime('now'))");
+        }
+
+        existingManager.initializeDatabase();
+
+        SQLiteRecipeRepository existingRepository =
+                new SQLiteRecipeRepository(existingManager);
+        Recipe reloaded =
+                existingRepository.getAllRecipes().get(0);
+        assertEquals("Already Versioned", reloaded.getTitle());
+        assertEquals("Description", reloaded.getDescription());
+
+        try (Connection connection = existingManager.getConnection();
+             ResultSet instructions = connection.getMetaData()
+                     .getColumns(null, null, "recipes", "instructions");
+             ResultSet categoryId = connection.getMetaData()
+                     .getColumns(null, null, "recipes", "category_id")) {
+            assertEquals(true, instructions.next());
+            assertEquals(true, categoryId.next());
+        }
+    }
 }

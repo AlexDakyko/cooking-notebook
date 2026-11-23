@@ -83,6 +83,9 @@ public class RecipeController {
     private Button deleteButton;
 
     @FXML
+    private Button newRecipeButton;
+
+    @FXML
     private TextField searchField;
 
     @FXML
@@ -120,6 +123,10 @@ public class RecipeController {
             FXCollections.observableArrayList();
     private final ObservableList<Photo> photos =
             FXCollections.observableArrayList();
+    private final java.util.List<Ingredient> draftIngredients =
+            new java.util.ArrayList<>();
+    private final java.util.List<Photo> draftPhotos =
+            new java.util.ArrayList<>();
 
     public RecipeController() {
         this(new RecipeService());
@@ -306,11 +313,16 @@ public class RecipeController {
 
     @FXML
     public void saveRecipe(ActionEvent event) {
-
         if (!saveCurrentChanges()) {
             return;
         }
+    }
 
+    @FXML
+    public void newRecipe(ActionEvent event) {
+        if (!confirmUnsavedChanges()) {
+            return;
+        }
         resetEditor();
     }
 
@@ -366,6 +378,9 @@ public class RecipeController {
                 recipeService.saveRecipe(recipe);
                 recipes.add(recipe);
                 filterRecipes();
+                selectedRecipe = recipe;
+                persistDraftDetails();
+                loadRecipeToForm(recipe);
             } else {
                 selectedRecipe.setTitle(title.trim());
                 selectedRecipe.setDescription(description);
@@ -375,6 +390,7 @@ public class RecipeController {
                 selectedRecipe.setCategoryId(categoryId);
                 recipeService.updateRecipe(selectedRecipe);
                 filterRecipes();
+                updateDateLabels(selectedRecipe);
             }
 
             hasUnsavedChanges = false;
@@ -462,12 +478,6 @@ public class RecipeController {
 
     @FXML
     public void addIngredient(ActionEvent event) {
-        if (selectedRecipe == null) {
-            showWarning(
-                    "Ингредиенты",
-                    "Сначала сохраните рецепт");
-            return;
-        }
         if (ingredientService == null) {
             showWarning(
                     "Ингредиенты",
@@ -477,6 +487,22 @@ public class RecipeController {
 
         try {
             Ingredient ingredient = readIngredientFromFields();
+            if (selectedRecipe == null) {
+                if (ingredient.getName().isBlank()) {
+                    throw new ValidationException(
+                            "Название ингредиента обязательно");
+                }
+                if (ingredient.getQuantity() != null
+                        && ingredient.getQuantity() < 0) {
+                    throw new ValidationException(
+                            "Количество ингредиента не может быть отрицательным");
+                }
+                ingredient.setRecipeId(0);
+                draftIngredients.add(ingredient);
+                ingredients.add(ingredient);
+                clearIngredientFields();
+                return;
+            }
             ingredient.setRecipeId(selectedRecipe.getId());
             ingredientService.saveIngredient(ingredient);
             ingredients.add(ingredient);
@@ -509,6 +535,17 @@ public class RecipeController {
 
         try {
             Ingredient updated = readIngredientFromFields();
+            if (selected.getId() == 0) {
+                updated.setId(0);
+                updated.setRecipeId(0);
+                draftIngredients.remove(selected);
+                draftIngredients.add(updated);
+                int index = ingredients.indexOf(selected);
+                if (index >= 0) {
+                    ingredients.set(index, updated);
+                }
+                return;
+            }
             updated.setId(selected.getId());
             updated.setRecipeId(selected.getRecipeId());
             ingredientService.updateIngredient(updated);
@@ -540,6 +577,12 @@ public class RecipeController {
         }
 
         try {
+            if (selected.getId() == 0) {
+                ingredients.remove(selected);
+                draftIngredients.remove(selected);
+                clearIngredientFields();
+                return;
+            }
             ingredientService.deleteIngredient(selected);
             ingredients.remove(selected);
             clearIngredientFields();
@@ -553,12 +596,6 @@ public class RecipeController {
 
     @FXML
     public void importPhoto(ActionEvent event) {
-        if (selectedRecipe == null) {
-            showWarning(
-                    "Фото",
-                    "Сначала сохраните рецепт");
-            return;
-        }
         if (photoService == null) {
             showWarning(
                     "Фото",
@@ -586,12 +623,28 @@ public class RecipeController {
         try {
             byte[] imageData = Files.readAllBytes(file.toPath());
             Photo photo = new Photo();
-            photo.setRecipeId(selectedRecipe.getId());
+            photo.setRecipeId(
+                    selectedRecipe == null
+                            ? 0
+                            : selectedRecipe.getId());
             photo.setFileName(file.getName());
             photo.setMimeType(detectMimeType(file));
             photo.setImageData(imageData);
-            photoService.savePhoto(photo);
-            loadPhotos(selectedRecipe);
+            if (selectedRecipe == null) {
+                if (!photoService.isSupportedMimeType(photo.getMimeType())) {
+                    throw new ValidationException(
+                            "Поддерживаются только JPG, PNG и GIF");
+                }
+                if (imageData.length > 10 * 1024 * 1024) {
+                    throw new ValidationException(
+                            "Размер фото не должен превышать 10 МБ");
+                }
+                draftPhotos.add(photo);
+                photos.add(photo);
+            } else {
+                photoService.savePhoto(photo);
+                loadPhotos(selectedRecipe);
+            }
             photoList.getSelectionModel()
                     .select(
                             photos.stream()
@@ -629,6 +682,15 @@ public class RecipeController {
         }
 
         try {
+            if (selected == null) {
+                return;
+            }
+            if (selected.getId() == 0) {
+                photos.remove(selected);
+                draftPhotos.remove(selected);
+                recipePhotoView.setImage(null);
+                return;
+            }
             photoService.deletePhoto(selected);
             photos.remove(selected);
             recipePhotoView.setImage(null);
@@ -797,6 +859,8 @@ public class RecipeController {
         clearIngredients();
         photos.clear();
         recipePhotoView.setImage(null);
+        draftIngredients.clear();
+        draftPhotos.clear();
     }
 
     private void clearIngredientFields() {
@@ -811,6 +875,26 @@ public class RecipeController {
         clearIngredientFields();
     }
 
+    private void persistDraftDetails() {
+        if (ingredientService != null) {
+            for (Ingredient ingredient : draftIngredients) {
+                ingredient.setRecipeId(selectedRecipe.getId());
+                ingredientService.saveIngredient(ingredient);
+            }
+            draftIngredients.clear();
+            loadIngredients(selectedRecipe);
+        }
+
+        if (photoService != null) {
+            for (Photo photo : draftPhotos) {
+                photo.setRecipeId(selectedRecipe.getId());
+                photoService.savePhoto(photo);
+            }
+            draftPhotos.clear();
+            loadPhotos(selectedRecipe);
+        }
+    }
+
     private void markUnsavedChange() {
         if (loadingRecipe) {
             return;
@@ -822,6 +906,8 @@ public class RecipeController {
     private void loadRecipeToForm(Recipe recipe) {
 
         loadingRecipe = true;
+        draftIngredients.clear();
+        draftPhotos.clear();
 
         selectedRecipe = recipe;
 
@@ -858,19 +944,19 @@ public class RecipeController {
         updateModeLabel();
     }
 
-    private void resetEditor() {
-
-        clearForm();
-
+    public void resetEditor() {
+        loadingRecipe = true;
+        recipeList.getSelectionModel().clearSelection();
         selectedRecipe = null;
-        hasUnsavedChanges = false;
-
+        clearForm();
         clearDateLabels();
-
-        recipeList.getSelectionModel()
-                .clearSelection();
-
+        hasUnsavedChanges = false;
+        loadingRecipe = false;
         updateModeLabel();
+    }
+
+    public ListView<Recipe> getRecipeListForTesting() {
+        return recipeList;
     }
 
     private void filterRecipes() {
