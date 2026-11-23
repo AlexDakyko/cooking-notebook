@@ -2,6 +2,11 @@ package com.cookingnotebook.controller;
 
 import com.cookingnotebook.model.Recipe;
 import com.cookingnotebook.service.RecipeService;
+import com.cookingnotebook.exception.DatabaseException;
+import com.cookingnotebook.exception.RecipeNotFoundException;
+import com.cookingnotebook.exception.ValidationException;
+import com.cookingnotebook.model.Category;
+import com.cookingnotebook.repository.CategoryRepository;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -44,6 +49,18 @@ public class RecipeController {
     private TextArea descriptionArea;
 
     @FXML
+    private TextArea instructionsArea;
+
+    @FXML
+    private TextField preparationTimeField;
+
+    @FXML
+    private TextField servingsField;
+
+    @FXML
+    private ComboBox<Category> categoryComboBox;
+
+    @FXML
     private Button saveButton;
 
     @FXML
@@ -59,6 +76,22 @@ public class RecipeController {
     private ListView<Recipe> recipeList;
 
     private RecipeService recipeService;
+    private CategoryRepository categoryRepository;
+
+    public RecipeController() {
+        this(new RecipeService());
+    }
+
+    public RecipeController(RecipeService recipeService) {
+        this(recipeService, null);
+    }
+
+    public RecipeController(
+            RecipeService recipeService,
+            CategoryRepository categoryRepository) {
+        this.recipeService = recipeService;
+        this.categoryRepository = categoryRepository;
+    }
 
     private final ObservableList<Recipe> recipes =
             FXCollections.observableArrayList();
@@ -69,12 +102,16 @@ public class RecipeController {
     @FXML
     public void initialize() {
 
-        recipeService = new RecipeService();
-
         recipeList.setItems(filteredRecipes);
 
         recipes.addAll(recipeService.loadRecipes());
         filteredRecipes.addAll(recipes);
+
+        if (categoryRepository != null) {
+            categoryComboBox.getItems().clear();
+            categoryComboBox.getItems()
+                    .addAll(categoryRepository.getAllCategories());
+        }
 
         sortComboBox.getItems().addAll(
                 "По названию А-Я",
@@ -136,6 +173,19 @@ public class RecipeController {
                     updateModeLabel();
                 });
 
+        instructionsArea.textProperty()
+                .addListener((obs, oldValue, newValue) ->
+                        markUnsavedChange());
+        preparationTimeField.textProperty()
+                .addListener((obs, oldValue, newValue) ->
+                        markUnsavedChange());
+        servingsField.textProperty()
+                .addListener((obs, oldValue, newValue) ->
+                        markUnsavedChange());
+        categoryComboBox.valueProperty()
+                .addListener((obs, oldValue, newValue) ->
+                        markUnsavedChange());
+
         hasUnsavedChanges = false;
 
         updateModeLabel();
@@ -147,9 +197,25 @@ public class RecipeController {
         return title != null && !title.isBlank();
     }
 
+    private int parseOptionalInteger(String value)
+            throws NumberFormatException {
+        if (value == null || value.trim().isEmpty()) {
+            return 0;
+        }
+        return Integer.parseInt(value.trim());
+    }
+
     @FXML
     public void saveRecipe(ActionEvent event) {
 
+        if (!saveCurrentChanges()) {
+            return;
+        }
+
+        resetEditor();
+    }
+
+    private boolean saveCurrentChanges() {
         String title = recipeTitleField.getText();
 
         if (!validateRecipeTitle(title)) {
@@ -161,47 +227,75 @@ public class RecipeController {
                     "Recipe title cannot be empty or contain only whitespace.");
 
             alert.showAndWait();
-            return;
+            return false;
         }
 
         String description = descriptionArea.getText();
+        String instructions = instructionsArea.getText();
 
-        if (selectedRecipe == null) {
-
-            Recipe recipe = new Recipe(
-                    title.trim(),
-                    description,
-                    "",
-                    0,
-                    0,
-                    1,
-                    1
-            );
-
-            recipeService.saveRecipe(recipe);
-
-            recipes.add(recipe);
-
-            if (searchField.getText() == null
-                    || searchField.getText().isBlank()) {
-                filteredRecipes.add(recipe);
-            }
-
-            sortRecipes();
-
-        } else {
-
-            selectedRecipe.setTitle(title.trim());
-            selectedRecipe.setDescription(description);
-
-            recipeService.updateRecipe(selectedRecipe);
-
-            recipeList.refresh();
+        int preparationTime;
+        int servings;
+        try {
+            preparationTime = parseOptionalInteger(
+                    preparationTimeField.getText());
+            servings = parseOptionalInteger(
+                    servingsField.getText());
+        } catch (NumberFormatException exception) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка ввода");
+            alert.setHeaderText("Некорректные числовые поля");
+            alert.setContentText(
+                    "Время подготовки и количество порций должны быть целыми числами.");
+            alert.showAndWait();
+            return false;
         }
 
-        hasUnsavedChanges = false;
+        Category category = categoryComboBox.getValue();
+        int categoryId = category == null ? 0 : category.getId();
 
-        resetEditor();
+        try {
+            if (selectedRecipe == null) {
+                Recipe recipe = new Recipe(
+                        title.trim(),
+                        description,
+                        instructions,
+                        preparationTime,
+                        servings,
+                        categoryId,
+                        0);
+
+                recipeService.saveRecipe(recipe);
+                recipes.add(recipe);
+
+                if (searchField.getText() == null
+                        || searchField.getText().isBlank()) {
+                    filteredRecipes.add(recipe);
+                }
+                sortRecipes();
+            } else {
+                selectedRecipe.setTitle(title.trim());
+                selectedRecipe.setDescription(description);
+                selectedRecipe.setInstructions(instructions);
+                selectedRecipe.setPreparationTime(preparationTime);
+                selectedRecipe.setServings(servings);
+                selectedRecipe.setCategoryId(categoryId);
+                recipeService.updateRecipe(selectedRecipe);
+                recipeList.refresh();
+            }
+
+            hasUnsavedChanges = false;
+            updateModeLabel();
+            return true;
+        } catch (DatabaseException
+                | RecipeNotFoundException
+                | ValidationException exception) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка сохранения");
+            alert.setHeaderText("Изменения не сохранены");
+            alert.setContentText(exception.getMessage());
+            alert.showAndWait();
+            return false;
+        }
     }
 
     @FXML
@@ -255,7 +349,16 @@ public class RecipeController {
             return;
         }
 
-        recipeService.deleteRecipe(recipeToDelete);
+        try {
+            recipeService.deleteRecipe(recipeToDelete);
+        } catch (DatabaseException | RecipeNotFoundException exception) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка удаления");
+            alert.setHeaderText("Рецепт не удалён");
+            alert.setContentText(exception.getMessage());
+            alert.showAndWait();
+            return;
+        }
 
         recipes.remove(recipeToDelete);
         filteredRecipes.remove(recipeToDelete);
@@ -269,8 +372,20 @@ public class RecipeController {
 
         recipeTitleField.clear();
         descriptionArea.clear();
+        instructionsArea.clear();
+        preparationTimeField.clear();
+        servingsField.clear();
+        categoryComboBox.setValue(null);
 
         loadingRecipe = false;
+    }
+
+    private void markUnsavedChange() {
+        if (loadingRecipe) {
+            return;
+        }
+        hasUnsavedChanges = true;
+        updateModeLabel();
     }
 
     private void loadRecipeToForm(Recipe recipe) {
@@ -281,6 +396,25 @@ public class RecipeController {
 
         recipeTitleField.setText(recipe.getTitle());
         descriptionArea.setText(recipe.getDescription());
+        instructionsArea.setText(
+                recipe.getInstructions() == null
+                        ? ""
+                        : recipe.getInstructions());
+        preparationTimeField.setText(
+                recipe.getPreparationTime() > 0
+                        ? String.valueOf(recipe.getPreparationTime())
+                        : "");
+        servingsField.setText(
+                recipe.getServings() > 0
+                        ? String.valueOf(recipe.getServings())
+                        : "");
+
+        categoryComboBox.setValue(
+                categoryComboBox.getItems().stream()
+                        .filter(category ->
+                                category.getId() == recipe.getCategoryId())
+                        .findFirst()
+                        .orElse(null));
 
         updateDateLabels(recipe);
 
@@ -441,18 +575,23 @@ public class RecipeController {
 
         if (result == saveButton) {
 
-    String title = recipeTitleField.getText();
-
-    if (!validateRecipeTitle(title)) {
-        return false;
-    }
-
-    saveRecipe(null);
-    return true;
+            return saveCurrentChanges();
 }
 
         if (result == discardButton) {
             hasUnsavedChanges = false;
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean confirmWindowClose() {
+        if (!hasUnsavedChanges) {
+            return true;
+        }
+
+        if (confirmUnsavedChanges()) {
             return true;
         }
 

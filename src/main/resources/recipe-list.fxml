@@ -59,6 +59,34 @@
                     prefRowCount="8"
                     promptText="Описание рецепта"/>
 
+            <Label text="Инструкции"/>
+
+            <TextArea
+                    fx:id="instructionsArea"
+                    prefRowCount="6"
+                    promptText="Шаги приготовления"/>
+
+            <HBox spacing="10">
+                <VBox spacing="5">
+                    <Label text="Время подготовки (мин)"/>
+                    <TextField
+                            fx:id="preparationTimeField"
+                            promptText="Например: 30"/>
+                </VBox>
+
+                <VBox spacing="5">
+                    <Label text="Порции"/>
+                    <TextField
+                            fx:id="servingsField"
+                            promptText="Например: 4"/>
+                </VBox>
+            </HBox>
+
+            <Label text="Категория"/>
+            <ComboBox
+                    fx:id="categoryComboBox"
+                    prefWidth="220"/>
+
             <Label
                     fx:id="createdAtLabel"
                     text="Создан: -"/>

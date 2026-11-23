@@ -1,6 +1,8 @@
 package com.cookingnotebook.repository;
 
 import com.cookingnotebook.database.DatabaseManager;
+import com.cookingnotebook.exception.DatabaseException;
+import com.cookingnotebook.exception.RecipeNotFoundException;
 import com.cookingnotebook.model.Recipe;
 
 import java.sql.Connection;
@@ -10,6 +12,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,8 +24,11 @@ public class SQLiteRecipeRepository
     private final DatabaseManager databaseManager;
 
     public SQLiteRecipeRepository() {
-        this.databaseManager =
-                new DatabaseManager();
+        this(new DatabaseManager());
+    }
+
+    public SQLiteRecipeRepository(DatabaseManager databaseManager) {
+        this.databaseManager = databaseManager;
     }
 
     @Override
@@ -36,6 +43,10 @@ public class SQLiteRecipeRepository
                     id,
                     title,
                     description,
+                    instructions,
+                    preparation_time,
+                    servings,
+                    category_id,
                     created_at,
                     updated_at
                 FROM recipes
@@ -64,6 +75,17 @@ public class SQLiteRecipeRepository
 
                 recipe.setDescription(
                         resultSet.getString("description"));
+                recipe.setInstructions(
+                        resultSet.getString("instructions"));
+                recipe.setPreparationTime(
+                        resultSet.getInt("preparation_time"));
+                recipe.setServings(
+                        resultSet.getInt("servings"));
+
+                int categoryId =
+                        resultSet.getInt("category_id");
+                recipe.setCategoryId(
+                        resultSet.wasNull() ? 0 : categoryId);
 
                 String createdAt =
                         resultSet.getString("created_at");
@@ -72,7 +94,7 @@ public class SQLiteRecipeRepository
                         && !createdAt.isBlank()) {
 
                     recipe.setCreatedAt(
-                            LocalDateTime.parse(createdAt));
+                            parseTimestamp(createdAt));
                 }
 
                 String updatedAt =
@@ -82,7 +104,7 @@ public class SQLiteRecipeRepository
                         && !updatedAt.isBlank()) {
 
                     recipe.setUpdatedAt(
-                            LocalDateTime.parse(updatedAt));
+                            parseTimestamp(updatedAt));
                 }
 
                 recipes.add(recipe);
@@ -90,9 +112,7 @@ public class SQLiteRecipeRepository
 
         } catch (SQLException e) {
 
-            throw new RuntimeException(
-                    "Failed to load recipes",
-                    e);
+            throw new DatabaseException("Failed to load recipes", e);
         }
 
         return recipes;
@@ -112,10 +132,14 @@ public class SQLiteRecipeRepository
                 INSERT INTO recipes(
                     title,
                     description,
+                    instructions,
+                    preparation_time,
+                    servings,
+                    category_id,
                     created_at,
                     updated_at
                 )
-                VALUES(?, ?, ?, ?)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (
@@ -138,13 +162,36 @@ public class SQLiteRecipeRepository
 
             statement.setString(
                     3,
+                    recipe.getInstructions());
+
+            statement.setInt(
+                    4,
+                    recipe.getPreparationTime());
+
+            statement.setInt(
+                    5,
+                    recipe.getServings());
+
+            if (recipe.getCategoryId() > 0) {
+                statement.setInt(6, recipe.getCategoryId());
+            } else {
+                statement.setNull(6, java.sql.Types.INTEGER);
+            }
+
+            statement.setString(
+                    7,
                     recipe.getCreatedAt().toString());
 
             statement.setString(
-                    4,
+                    8,
                     recipe.getUpdatedAt().toString());
 
-            statement.executeUpdate();
+            int affectedRows = statement.executeUpdate();
+            if (affectedRows != 1) {
+                throw new DatabaseException(
+                        "Failed to insert recipe",
+                        new SQLException("No rows inserted"));
+            }
 
             try (
                     ResultSet keys =
@@ -159,10 +206,7 @@ public class SQLiteRecipeRepository
             }
 
         } catch (SQLException e) {
-
-            throw new RuntimeException(
-                    "Failed to save recipe",
-                    e);
+            throw new DatabaseException("Failed to save recipe", e);
         }
     }
 
@@ -177,6 +221,10 @@ public class SQLiteRecipeRepository
                 UPDATE recipes
                 SET title = ?,
                     description = ?,
+                    instructions = ?,
+                    preparation_time = ?,
+                    servings = ?,
+                    category_id = ?,
                     updated_at = ?
                 WHERE id = ?
                 """;
@@ -199,19 +247,38 @@ public class SQLiteRecipeRepository
 
             statement.setString(
                     3,
-                    recipe.getUpdatedAt().toString());
+                    recipe.getInstructions());
 
             statement.setInt(
                     4,
+                    recipe.getPreparationTime());
+
+            statement.setInt(
+                    5,
+                    recipe.getServings());
+
+            if (recipe.getCategoryId() > 0) {
+                statement.setInt(6, recipe.getCategoryId());
+            } else {
+                statement.setNull(6, java.sql.Types.INTEGER);
+            }
+
+            statement.setString(
+                    7,
+                    recipe.getUpdatedAt().toString());
+
+            statement.setInt(
+                    8,
                     recipe.getId());
 
-            statement.executeUpdate();
+            int affectedRows = statement.executeUpdate();
+
+            if (affectedRows != 1) {
+                throw new RecipeNotFoundException(recipe.getId());
+            }
 
         } catch (SQLException e) {
-
-            throw new RuntimeException(
-                    "Failed to update recipe",
-                    e);
+            throw new DatabaseException("Failed to update recipe", e);
         }
     }
 
@@ -233,13 +300,30 @@ public class SQLiteRecipeRepository
                     1,
                     recipe.getId());
 
-            statement.executeUpdate();
+            int affectedRows = statement.executeUpdate();
+
+            if (affectedRows != 1) {
+                throw new RecipeNotFoundException(recipe.getId());
+            }
 
         } catch (SQLException e) {
+            throw new DatabaseException("Failed to delete recipe", e);
+        }
+    }
 
-            throw new RuntimeException(
-                    "Failed to delete recipe",
-                    e);
+    private LocalDateTime parseTimestamp(String timestamp) {
+        try {
+            return LocalDateTime.parse(timestamp);
+        } catch (DateTimeParseException isoError) {
+            try {
+                return LocalDateTime.parse(
+                        timestamp,
+                        DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+            } catch (DateTimeParseException displayError) {
+                throw new DatabaseException(
+                        "Malformed timestamp in database: " + timestamp,
+                        displayError);
+            }
         }
     }
 }

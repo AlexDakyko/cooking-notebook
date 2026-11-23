@@ -30,90 +30,89 @@ A task can be marked complete only when:
 
 # Phase 1 – Project Setup
 
-- [ ] T1.1 Create Maven project
-- [ ] T1.2 Configure Java 21
-- [ ] T1.3 Add JavaFX dependencies
-- [ ] T1.4 Add SQLite JDBC dependency
-- [ ] T1.5 Add JUnit 5 dependency
-- [ ] T1.6 Create project package structure
-- [ ] T1.7 Create application entry point
-- [ ] T1.8 Verify application starts
+- [x] T1.1 Create Maven project
+- [x] T1.2 Configure Java 21
+- [x] T1.3 Add JavaFX dependencies
+- [x] T1.4 Add SQLite JDBC dependency
+- [x] T1.5 Add JUnit 5 dependency
+- [x] T1.6 Create project package structure
+- [x] T1.7 Create application entry point
+- [x] T1.8 Verify application starts
 - [ ] T1.9 Commit project setup
 
 ---
 
 # Phase 2 – Database Foundation
 
-- [ ] T2.1 Create DatabaseManager
-- [ ] T2.2 Create DatabaseInitializer
-- [ ] T2.3 Enable SQLite foreign keys
-- [ ] T2.4 Create categories table
-- [ ] T2.5 Create recipes table
-- [ ] T2.6 Create ingredients table
-- [ ] T2.7 Create photos table
-- [ ] T2.8 Create settings table
-- [ ] T2.9 Verify database creation on first launch
-- [ ] T2.10 Create database initialization tests
-- [ ] T2.11 Run tests and fix failures
+- [x] T2.1 Create DatabaseManager
+- [x] T2.2 Create DatabaseInitializer
+- [x] T2.3 Enable SQLite foreign keys
+- [x] T2.4 Create categories table
+- [x] T2.5 Create recipes table
+- [x] T2.6 Create ingredients table
+- [x] T2.7 Create photos table
+- [x] T2.8 Create settings table
+- [x] T2.9 Verify database creation on first launch
+- [x] T2.10 Create database initialization tests
+- [x] T2.11 Run tests and fix failures
 - [ ] T2.12 Commit database foundation
 
 ---
 
 # Phase 3 – Domain Model
 
-- [ ] T3.1 Create Recipe entity
-- [ ] T3.2 Create Ingredient entity
-- [ ] T3.3 Create Category entity
-- [ ] T3.4 Create Photo entity
-- [ ] T3.5 Create ApplicationSettings entity
-- [ ] T3.6 Create model tests
-- [ ] T3.7 Commit domain model
+- [x] T3.1 Create Recipe entity
+- [x] T3.2 Create Ingredient entity
+- [x] T3.3 Create Category entity
+- [x] T3.4 Create Photo entity
+- [x] T3.5 Create ApplicationSettings entity
+- [x] T3.6 Create model tests
 
 ---
 
 # Phase 4 – Repository Layer
 
-- [ ] T4.1 Create CategoryRepository
-- [ ] T4.2 Create RecipeRepository
-- [ ] T4.3 Create IngredientRepository
-- [ ] T4.4 Create PhotoRepository
-- [ ] T4.5 Create SettingsRepository
-- [ ] T4.6 Implement recipe CRUD operations
-- [ ] T4.7 Implement category CRUD operations
-- [ ] T4.8 Implement ingredient persistence
-- [ ] T4.9 Implement photo persistence
-- [ ] T4.10 Implement settings persistence
-- [ ] T4.11 Create repository tests
-- [ ] T4.12 Verify cascade delete behavior
-- [ ] T4.13 Run tests and fix failures
+- [x] T4.1 Create CategoryRepository
+- [x] T4.2 Create RecipeRepository
+- [x] T4.3 Create IngredientRepository
+- [x] T4.4 Create PhotoRepository
+- [x] T4.5 Create SettingsRepository
+- [x] T4.6 Implement recipe CRUD operations
+- [x] T4.7 Implement category CRUD operations
+- [x] T4.8 Implement ingredient persistence
+- [x] T4.9 Implement photo persistence
+- [x] T4.10 Implement settings persistence
+- [x] T4.11 Create repository tests
+- [x] T4.12 Verify cascade delete behavior
+- [x] T4.13 Run tests and fix failures
 - [ ] T4.14 Commit repository layer
 
 ---
 
 # Phase 5 – Service Layer
 
-- [ ] T5.1 Create RecipeService
-- [ ] T5.2 Create PhotoService
-- [ ] T5.3 Create SettingsService
-- [ ] T5.4 Add validation rules
-- [ ] T5.5 Add search by recipe title
-- [ ] T5.6 Add filtering by category
-- [ ] T5.7 Create service tests
-- [ ] T5.8 Run tests and fix failures
+- [x] T5.1 Create RecipeService
+- [x] T5.2 Create PhotoService
+- [x] T5.3 Create SettingsService
+- [x] T5.4 Add validation rules
+- [x] T5.5 Add search by recipe title
+- [x] T5.6 Add filtering by category
+- [x] T5.7 Create service tests
+- [x] T5.8 Run tests and fix failures
 - [ ] T5.9 Commit service layer
 
 ---
 
 # Phase 6 – User Interface
 
-- [ ] T6.1 Create MainWindow
-- [ ] T6.2 Create recipe list panel
-- [ ] T6.3 Create recipe editor panel
-- [ ] T6.4 Create toolbar actions
-- [ ] T6.5 Implement New Recipe feature
-- [ ] T6.6 Implement Save Recipe feature
-- [ ] T6.7 Implement Delete Recipe feature
-- [ ] T6.8 Implement recipe search UI
+- [x] T6.1 Create MainWindow
+- [x] T6.2 Create recipe list panel
+- [x] T6.3 Create recipe editor panel
+- [x] T6.4 Create toolbar actions
+- [x] T6.5 Implement New Recipe feature
+- [x] T6.6 Implement Save Recipe feature
+- [x] T6.7 Implement Delete Recipe feature
+- [x] T6.8 Implement recipe search UI
 - [ ] T6.9 Implement category filter UI
 - [ ] T6.10 Display recipe photos
 - [ ] T6.11 Perform manual UI testing

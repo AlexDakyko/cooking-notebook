@@ -6,7 +6,9 @@ Users can create, edit, organize, search, import, and export recipes, attach pho
 
 **All data is stored locally in an SQLite database.**
 
-Phase 0 focuses on documentation, architecture, and project rules. Development starts in Phase 1 as defined in the task list.
+The project setup, database foundation, domain model, repository layer, service layer,
+and core recipe editor implementation are underway. Current work follows the ordered
+backlog in `docs/tasks.md`.
 
 ---
 
@@ -61,7 +63,7 @@ These rules may be followed by Cursor, Continue, Ollama-assisted workflows, or a
 | SSD | Completed |
 | Design | Completed |
 | Tasks | Completed |
-| Java Code | Not Started |
+| Java Code | In Development |
 
 ---
 
