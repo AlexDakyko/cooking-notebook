@@ -11,6 +11,8 @@ import com.cookingnotebook.database.DatabaseManager;
 import com.cookingnotebook.controller.RecipeController;
 import com.cookingnotebook.repository.SQLiteRecipeRepository;
 import com.cookingnotebook.repository.SQLiteCategoryRepository;
+import com.cookingnotebook.repository.SQLiteIngredientRepository;
+import com.cookingnotebook.repository.SQLitePhotoRepository;
 import com.cookingnotebook.service.RecipeService;
 import java.sql.SQLException;
 
@@ -40,6 +42,10 @@ public class Main extends Application {
                         new SQLiteRecipeRepository(databaseManager));
         SQLiteCategoryRepository categoryRepository =
                 new SQLiteCategoryRepository(databaseManager);
+        SQLiteIngredientRepository ingredientRepository =
+                new SQLiteIngredientRepository(databaseManager);
+        SQLitePhotoRepository photoRepository =
+                new SQLitePhotoRepository(databaseManager);
 
         FXMLLoader loader =
                 new FXMLLoader(
@@ -48,7 +54,9 @@ public class Main extends Application {
             if (type == RecipeController.class) {
                 return new RecipeController(
                         recipeService,
-                        categoryRepository);
+                        categoryRepository,
+                        ingredientRepository,
+                        photoRepository);
             }
             try {
                 return type.getDeclaredConstructor().newInstance();

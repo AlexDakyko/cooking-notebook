@@ -46,4 +46,11 @@ public class Photo {
     public void setImageData(byte[] imageData) {
         this.imageData = imageData;
     }
+
+    @Override
+    public String toString() {
+        return fileName == null || fileName.isBlank()
+                ? "Photo #" + id
+                : fileName;
+    }
 }

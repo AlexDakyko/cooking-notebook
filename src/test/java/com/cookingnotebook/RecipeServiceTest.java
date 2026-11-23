@@ -49,4 +49,24 @@ class RecipeServiceTest {
         assertEquals(1, service.filterByCategory(3).size());
         assertEquals(2, service.searchByTitle("").size());
     }
+
+    @Test
+    void combinesCategoryAndTitleFilters() {
+        Recipe soup = new Recipe();
+        soup.setTitle("Tomato Soup");
+        soup.setCategoryId(2);
+        service.saveRecipe(soup);
+
+        Recipe cake = new Recipe();
+        cake.setTitle("Tomato Cake");
+        cake.setCategoryId(3);
+        service.saveRecipe(cake);
+
+        assertEquals(
+                1,
+                service.filterByCategoryAndSearch(2, "tomato").size());
+        assertEquals(
+                0,
+                service.filterByCategoryAndSearch(3, "soup").size());
+    }
 }

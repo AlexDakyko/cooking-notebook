@@ -6,6 +6,8 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
@@ -30,6 +32,11 @@
 
             <ComboBox
                     fx:id="sortComboBox"
+                    prefWidth="180"/>
+
+            <ComboBox
+                    fx:id="categoryFilterComboBox"
+                    promptText="Все категории"
                     prefWidth="180"/>
 
             <ListView
@@ -86,6 +93,59 @@
             <ComboBox
                     fx:id="categoryComboBox"
                     prefWidth="220"/>
+
+            <Label text="Ингредиенты"/>
+            <ListView
+                    fx:id="ingredientList"
+                    prefHeight="100"/>
+
+            <HBox spacing="5">
+                <TextField
+                        fx:id="ingredientNameField"
+                        promptText="Название"
+                        prefWidth="180"/>
+                <TextField
+                        fx:id="ingredientQuantityField"
+                        promptText="Кол-во"
+                        prefWidth="70"/>
+                <TextField
+                        fx:id="ingredientUnitField"
+                        promptText="Ед."
+                        prefWidth="70"/>
+            </HBox>
+
+            <HBox spacing="10">
+                <Button
+                        text="Добавить ингредиент"
+                        onAction="#addIngredient"/>
+                <Button
+                        text="Сохранить ингредиент"
+                        onAction="#updateIngredient"/>
+                <Button
+                        text="Удалить ингредиент"
+                        onAction="#deleteIngredient"/>
+            </HBox>
+
+            <Label text="Фото"/>
+            <ImageView
+                    fx:id="recipePhotoView"
+                    fitWidth="280"
+                    fitHeight="180"
+                    preserveRatio="true"/>
+            <ListView
+                    fx:id="photoList"
+                    prefHeight="70"/>
+            <HBox spacing="10">
+                <Button
+                        text="Импортировать фото"
+                        onAction="#importPhoto"/>
+                <Button
+                        text="Экспортировать фото"
+                        onAction="#exportPhoto"/>
+                <Button
+                        text="Удалить фото"
+                        onAction="#deletePhoto"/>
+            </HBox>
 
             <Label
                     fx:id="createdAtLabel"

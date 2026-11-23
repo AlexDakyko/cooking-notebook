@@ -113,8 +113,8 @@ A task can be marked complete only when:
 - [x] T6.6 Implement Save Recipe feature
 - [x] T6.7 Implement Delete Recipe feature
 - [x] T6.8 Implement recipe search UI
-- [ ] T6.9 Implement category filter UI
-- [ ] T6.10 Display recipe photos
+- [x] T6.9 Implement category filter UI
+- [x] T6.10 Display recipe photos
 - [ ] T6.11 Perform manual UI testing
 - [ ] T6.12 Commit UI implementation
 
@@ -124,8 +124,8 @@ A task can be marked complete only when:
 
 - [ ] T7.1 Import recipes from TXT
 - [ ] T7.2 Export recipes to TXT
-- [ ] T7.3 Import photos into database
-- [ ] T7.4 Export photos to folder
+- [x] T7.3 Import photos into database
+- [x] T7.4 Export photos to folder
 - [ ] T7.5 Create import/export tests
 - [ ] T7.6 Run tests and fix failures
 - [ ] T7.7 Commit import/export features

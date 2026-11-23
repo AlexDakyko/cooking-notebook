@@ -107,4 +107,30 @@ public List<Recipe> filterByCategory(int categoryId) {
     return matches;
 }
 
+public List<Recipe> filterByCategoryAndSearch(
+        int categoryId,
+        String searchText) {
+    String query = searchText == null
+            ? ""
+            : searchText.trim().toLowerCase(Locale.ROOT);
+    List<Recipe> matches = new ArrayList<>();
+
+    for (Recipe recipe : repository.getAllRecipes()) {
+        if (recipe.getCategoryId() != categoryId) {
+            continue;
+        }
+        if (query.isEmpty()) {
+            matches.add(recipe);
+            continue;
+        }
+        String title = recipe.getTitle() == null
+                ? ""
+                : recipe.getTitle().toLowerCase(Locale.ROOT);
+        if (title.contains(query)) {
+            matches.add(recipe);
+        }
+    }
+    return matches;
+}
+
 }

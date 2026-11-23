@@ -56,4 +56,14 @@ public class Ingredient {
     public void setUnit(String unit) {
         this.unit = unit;
     }
+
+    @Override
+    public String toString() {
+        String quantityText =
+                quantity == null ? "" : quantity.toString();
+        String unitText =
+                unit == null || unit.isBlank() ? "" : " " + unit.trim();
+        return name + (quantityText.isEmpty() ? "" : " - " + quantityText)
+                + unitText;
+    }
 }
